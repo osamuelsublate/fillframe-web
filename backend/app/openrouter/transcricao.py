@@ -5,7 +5,7 @@ import base64
 import httpx
 
 from app.openrouter.cliente import obter_cliente
-from app.openrouter.erros import ErroOpenRouter, mensagem_de_erro
+from app.openrouter.erros import ErroOpenRouter, erro_de_conexao, mensagem_de_erro
 
 TEMPO_LIMITE = httpx.Timeout(connect=15.0, read=180.0, write=120.0, pool=15.0)
 
@@ -39,7 +39,7 @@ async def transcrever(modelo: str, conteudo: bytes, formato: str) -> str:
         try:
             resposta = await obter_cliente().post("/chat/completions", json=corpo, timeout=TEMPO_LIMITE)
         except httpx.HTTPError as erro:
-            raise ErroOpenRouter("Não foi possível falar com a OpenRouter para transcrever o áudio.") from erro
+            raise erro_de_conexao(erro, "para transcrever o áudio") from erro
         if resposta.status_code != 200:
             raise ErroOpenRouter(mensagem_de_erro(resposta.content, resposta.status_code))
 

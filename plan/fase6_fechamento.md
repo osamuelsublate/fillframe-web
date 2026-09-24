@@ -4,7 +4,7 @@ Objetivo: usar o FillFrame no dia a dia com mensagens de erro claras em qualquer
 Depende de: Fase 5
 
 ## Onda 6.1: Mensagens de erro e revisão das telas
-Status: pendente
+Status: concluída (2026-09-24)
 Objetivo: toda ação que pode falhar mostra uma mensagem clara em português, e a tela única fica revisada no computador em tamanhos diferentes de janela.
 Depende de: 5.2, 5.3, 5.4, 4.3, 3.5
 Ler antes: spec/telas.md (tela única inteira, "Fluxo de primeiro acesso", "Fluxo de uso diário"); spec/usuarios.md ("Escala e dispositivo principal")

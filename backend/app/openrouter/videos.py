@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import httpx
 
 from app.openrouter.cliente import URL_BASE, obter_cliente
-from app.openrouter.erros import ErroOpenRouter, mensagem_de_erro
+from app.openrouter.erros import ErroOpenRouter, erro_de_conexao, mensagem_de_erro
 
 TEMPO_LIMITE = httpx.Timeout(connect=15.0, read=120.0, write=60.0, pool=15.0)
 TEMPO_LIMITE_DOWNLOAD = httpx.Timeout(connect=15.0, read=300.0, write=60.0, pool=15.0)
@@ -55,7 +55,7 @@ async def enviar_video(
     try:
         resposta = await obter_cliente().post("/videos", json=corpo, timeout=TEMPO_LIMITE)
     except httpx.HTTPError as erro:
-        raise ErroOpenRouter("Não foi possível falar com a OpenRouter. Confira a internet.") from erro
+        raise erro_de_conexao(erro) from erro
     if resposta.status_code not in (200, 202):
         raise ErroOpenRouter(mensagem_de_erro(resposta.content, resposta.status_code))
 

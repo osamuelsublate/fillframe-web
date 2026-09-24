@@ -40,18 +40,22 @@ export function useSessoes() {
   return useQuery({
     queryKey: ['sessoes'],
     queryFn: () => pedir<SessaoResumo[]>('/sessoes'),
+    meta: { erroNaTela: true },
   })
 }
 
 export function useSessao(id: string | null) {
   return useQuery({
     queryKey: ['sessoes', id],
+    meta: { erroNaTela: true },
     queryFn: () => pedir<SessaoCompleta>(`/sessoes/${encodeURIComponent(id!)}`),
     enabled: id !== null,
     retry: false,
     // Enquanto alguma criação está gerando, consulta o andamento a cada 2 s.
     refetchInterval: (consulta) =>
       consulta.state.data?.criacoes.some((c) => c.situacao === 'gerando') ? 2000 : false,
+    // Continua consultando mesmo com a aba em segundo plano: ao voltar, o resultado já está lá.
+    refetchIntervalInBackground: true,
   })
 }
 
@@ -74,6 +78,7 @@ export function useCriarSessao() {
 export function useAlterarSessao(id: string) {
   const clienteQuery = useQueryClient()
   return useMutation({
+    meta: { erroNaTela: true },
     mutationFn: (dados: { nome?: string; llm?: string }) =>
       pedir<SessaoResumo>(`/sessoes/${encodeURIComponent(id)}`, {
         method: 'PATCH',
@@ -87,6 +92,7 @@ export function useAlterarSessao(id: string) {
 export function useRenomearSessao() {
   const clienteQuery = useQueryClient()
   return useMutation({
+    meta: { erroNaTela: true },
     mutationFn: ({ id, nome }: { id: string; nome: string }) =>
       pedir<SessaoResumo>(`/sessoes/${encodeURIComponent(id)}`, {
         method: 'PATCH',
@@ -101,6 +107,7 @@ export function useRenomearSessao() {
 export function useApagarSessao() {
   const clienteQuery = useQueryClient()
   return useMutation({
+    meta: { erroNaTela: true },
     mutationFn: (id: string) => apagarNaApi(`/sessoes/${encodeURIComponent(id)}`),
     onSuccess: (_, id) => {
       // Tira da lista na hora, para o app não tentar reabrir a sessão que acabou de sumir.

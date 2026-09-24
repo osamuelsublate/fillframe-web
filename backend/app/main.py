@@ -88,8 +88,11 @@ async def erro_validacao(_: Request, exc: RequestValidationError) -> JSONRespons
 
 @app.exception_handler(Exception)
 async def erro_inesperado(_: Request, exc: Exception) -> JSONResponse:
+    # O detalhe completo fica só no terminal do backend; a tela recebe uma mensagem simples.
     log.exception("Erro inesperado")
-    return JSONResponse(status_code=500, content={"erro": "Erro inesperado no servidor"})
+    return JSONResponse(
+        status_code=500, content={"erro": "Algo deu errado no FillFrame. Detalhes no terminal do backend."}
+    )
 
 
 app.include_router(rotas_sistema)

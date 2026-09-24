@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import httpx
 
 from app.openrouter.cliente import obter_cliente
-from app.openrouter.erros import ErroOpenRouter, mensagem_de_erro
+from app.openrouter.erros import ErroOpenRouter, erro_de_conexao, mensagem_de_erro
 
 # Algumas imagens demoram bastante (modelos grandes, 4K).
 TEMPO_LIMITE = httpx.Timeout(connect=15.0, read=600.0, write=60.0, pool=15.0)
@@ -46,7 +46,7 @@ async def gerar_imagens(
     try:
         resposta = await obter_cliente().post("/images", json=corpo, timeout=TEMPO_LIMITE)
     except httpx.HTTPError as erro:
-        raise ErroOpenRouter("Não foi possível falar com a OpenRouter. Confira a internet.") from erro
+        raise erro_de_conexao(erro) from erro
 
     if resposta.status_code != 200:
         raise ErroOpenRouter(mensagem_de_erro(resposta.content, resposta.status_code))

@@ -331,7 +331,7 @@ export default function Chat({ sessao, anexoExterno = null, aoRevisarCriacao }: 
                 onClick={() => seletorArquivo.current?.click()}
                 title="Anexar imagens ou arquivos de texto"
                 aria-label="Anexar arquivo"
-                className="rounded-xl p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900"
+                className="shrink-0 rounded-xl p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
                   <path d="m21.4 11.1-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8" />
@@ -346,8 +346,9 @@ export default function Chat({ sessao, anexoExterno = null, aoRevisarCriacao }: 
                 onKeyDown={aoTeclar}
                 rows={1}
                 autoFocus
-                placeholder="Escreva sua mensagem… (Enter envia, Shift+Enter quebra a linha)"
-                className="max-h-60 min-h-9 flex-1 resize-none bg-transparent px-2 py-1.5 outline-none"
+                placeholder="Escreva sua mensagem…"
+                title="Enter envia, Shift+Enter quebra a linha"
+                className="max-h-60 min-h-9 min-w-0 flex-1 resize-none bg-transparent px-2 py-1.5 outline-none"
               />
             )}
             <GravadorAudio
@@ -361,7 +362,7 @@ export default function Chat({ sessao, anexoExterno = null, aoRevisarCriacao }: 
                 type="button"
                 onClick={() => enviar()}
                 disabled={!podeEnviar}
-                className="rounded-xl bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+                className="shrink-0 rounded-xl bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-300"
               >
                 {subindoAudio ? 'Enviando…' : 'Enviar'}
               </button>

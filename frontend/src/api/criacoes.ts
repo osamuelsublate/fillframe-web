@@ -64,6 +64,7 @@ export type ConfigCriacao = {
 export function useSalvarCriacao(sessaoId: string) {
   const clienteQuery = useQueryClient()
   return useMutation({
+    meta: { erroNaTela: true },
     mutationFn: ({ id, config }: { id: string | null; config: ConfigCriacao }) =>
       pedir<Criacao>(
         id
@@ -86,6 +87,7 @@ export function useSalvarCriacao(sessaoId: string) {
 export function useGerarCriacao(sessaoId: string) {
   const clienteQuery = useQueryClient()
   return useMutation({
+    meta: { erroNaTela: true },
     mutationFn: (criacaoId: string) =>
       pedir<Criacao>(
         `/sessoes/${encodeURIComponent(sessaoId)}/criacoes/${encodeURIComponent(criacaoId)}/gerar`,
@@ -102,6 +104,7 @@ export function useGerarCriacao(sessaoId: string) {
 export function useNovaVersao(sessaoId: string) {
   const clienteQuery = useQueryClient()
   return useMutation({
+    meta: { erroNaTela: true },
     mutationFn: (criacaoId: string) =>
       pedir<Criacao>(
         `/sessoes/${encodeURIComponent(sessaoId)}/criacoes/${encodeURIComponent(criacaoId)}/versoes`,
@@ -121,6 +124,7 @@ export function useNovaVersao(sessaoId: string) {
 export function useApagarCriacao() {
   const clienteQuery = useQueryClient()
   return useMutation({
+    meta: { erroNaTela: true },
     mutationFn: ({ sessaoId, criacaoId }: { sessaoId: string; criacaoId: string }) =>
       apagarNaApi(`/sessoes/${encodeURIComponent(sessaoId)}/criacoes/${encodeURIComponent(criacaoId)}`),
     onSuccess: (_, { sessaoId }) => {

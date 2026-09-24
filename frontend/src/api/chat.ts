@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { ErroApi, pedir } from './cliente'
+import { chamar, erroDaResposta, mensagemDe } from '../utils/erros'
+import { pedir } from './cliente'
 
 export type Llm = {
   id: string
@@ -38,20 +39,18 @@ export async function enviarMensagem(
 ) {
   let resposta: Response
   try {
-    resposta = await fetch(`/api/sessoes/${encodeURIComponent(sessaoId)}/mensagens`, {
+    resposta = await chamar(`/api/sessoes/${encodeURIComponent(sessaoId)}/mensagens`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ texto, referencia_ids: referenciaIds, audio_referencia_id: audioReferenciaId }),
     })
-  } catch {
-    aoErro('Não foi possível falar com o backend. Ele está rodando?')
+  } catch (falha) {
+    aoErro(mensagemDe(falha))
     return
   }
 
   if (!resposta.ok || !resposta.body) {
-    const corpo = await resposta.json().catch(() => null)
-    const erro = new ErroApi(corpo?.erro ?? 'Não foi possível enviar a mensagem.', resposta.status)
-    aoErro(erro.message)
+    aoErro((await erroDaResposta(resposta, 'Não foi possível enviar a mensagem.')).message)
     return
   }
 
@@ -90,7 +89,7 @@ export async function enviarMensagem(
       }
     }
   } catch {
-    aoErro('A conexão com o backend caiu no meio da resposta.')
+    aoErro('A conexão com o FillFrame caiu no meio da resposta. Confira se o terminal do backend está aberto.')
     return
   }
 

@@ -28,7 +28,7 @@ export default function Painel({ sessao, destaque, aoMandarParaChat, cabecalho }
   }
 
   return (
-    <aside className="relative flex w-[28rem] shrink-0 flex-col border-l border-stone-200 bg-white">
+    <aside className="relative flex w-[min(28rem,45vw)] shrink-0 flex-col border-l border-stone-200 bg-white">
       <div className="flex h-12 items-center justify-between border-b border-stone-200 px-3">
         <div className="flex gap-1 text-sm">
           <BotaoAba ativa={aba === 'criacao'} aoClicar={() => setAba('criacao')}>

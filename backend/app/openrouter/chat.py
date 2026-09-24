@@ -7,7 +7,7 @@ from uuid import uuid4
 import httpx
 
 from app.openrouter.cliente import obter_cliente
-from app.openrouter.erros import ErroOpenRouter, mensagem_de_erro
+from app.openrouter.erros import ErroOpenRouter, erro_de_conexao, erro_no_meio, mensagem_de_erro
 
 # A resposta pode demorar a começar (modelos que pensam antes de responder).
 TEMPO_LIMITE = httpx.Timeout(connect=15.0, read=300.0, write=30.0, pool=15.0)
@@ -46,9 +46,7 @@ async def conversar(modelo: str, mensagens: list[dict], tools: list[dict] | None
                     continue
 
                 if pedaco.get("error"):
-                    raise ErroOpenRouter(
-                        f"A OpenRouter devolveu um erro: {pedaco['error'].get('message', 'desconhecido')}"
-                    )
+                    raise ErroOpenRouter(erro_no_meio(pedaco["error"]))
 
                 for escolha in pedaco.get("choices") or []:
                     delta = escolha.get("delta") or {}
@@ -66,7 +64,7 @@ async def conversar(modelo: str, mensagens: list[dict], tools: list[dict] | None
                         if funcao.get("arguments"):
                             atual["argumentos"] += funcao["arguments"]
     except httpx.HTTPError as erro:
-        raise ErroOpenRouter("Não foi possível falar com a OpenRouter. Confira a internet.") from erro
+        raise erro_de_conexao(erro) from erro
 
     if chamadas:
         lista = [chamadas[i] for i in sorted(chamadas)]

@@ -308,7 +308,7 @@ async def responder(sessao_id: str, llm: str, mensagem_usuario: Mensagem) -> Asy
         erro = str(falha)
     except Exception:
         log.exception("Erro inesperado no chat")
-        erro = "Erro inesperado ao falar com a LLM."
+        erro = "Algo deu errado no FillFrame. Detalhes no terminal do backend."
     finally:
         # Guarda o que chegou da rodada interrompida, mesmo se a conexão caiu no meio.
         texto = "".join(partes).strip()

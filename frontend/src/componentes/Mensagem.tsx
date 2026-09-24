@@ -142,6 +142,18 @@ function Markdown({ texto }: { texto: string }) {
       continue
     }
 
+    // Citação: linhas que começam com ">" (o conteúdo de dentro também é markdown).
+    if (/^\s*>/.test(linha)) {
+      const citacao: string[] = []
+      while (i < linhas.length && /^\s*>/.test(linhas[i])) citacao.push(linhas[i++].replace(/^\s*>\s?/, ''))
+      blocos.push(
+        <blockquote key={blocos.length} className="space-y-2 border-l-2 border-stone-300 pl-3 text-stone-700">
+          <Markdown texto={citacao.join('\n')} />
+        </blockquote>,
+      )
+      continue
+    }
+
     const titulo = linha.match(/^(#{1,4})\s+(.*)/)
     if (titulo) {
       const tamanho = titulo[1].length <= 2 ? 'text-lg' : 'text-base'
@@ -187,7 +199,7 @@ function Markdown({ texto }: { texto: string }) {
     while (
       i < linhas.length &&
       linhas[i].trim() &&
-      !/^(#{1,4}\s|\s*([-*]|\d+\.)\s+|\s*```)/.test(linhas[i])
+      !/^(#{1,4}\s|\s*([-*]|\d+\.)\s+|\s*```|\s*>)/.test(linhas[i])
     ) {
       paragrafo.push(linhas[i++])
     }

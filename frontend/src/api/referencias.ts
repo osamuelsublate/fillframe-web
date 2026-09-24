@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { apagarNaApi, ErroApi, pedir } from './cliente'
+import { chamar, erroDaResposta } from '../utils/erros'
+import { apagarNaApi, pedir } from './cliente'
 
 export type Referencia = {
   id: string
@@ -22,20 +23,12 @@ export const ACEITOS =
 export async function enviarReferencia(sessaoId: string, arquivo: File): Promise<Referencia> {
   const formulario = new FormData()
   formulario.append('arquivo', arquivo)
-  let resposta: Response
-  try {
-    resposta = await fetch(`/api/sessoes/${encodeURIComponent(sessaoId)}/referencias`, {
-      method: 'POST',
-      body: formulario,
-    })
-  } catch {
-    throw new ErroApi('Não foi possível falar com o backend. Ele está rodando?', 0)
-  }
-  const corpo = await resposta.json().catch(() => null)
-  if (!resposta.ok) {
-    throw new ErroApi(corpo?.erro ?? 'Não foi possível enviar o arquivo.', resposta.status)
-  }
-  return corpo as Referencia
+  const resposta = await chamar(`/api/sessoes/${encodeURIComponent(sessaoId)}/referencias`, {
+    method: 'POST',
+    body: formulario,
+  })
+  if (!resposta.ok) throw await erroDaResposta(resposta, 'Não foi possível enviar o arquivo.')
+  return (await resposta.json()) as Referencia
 }
 
 // Transforma uma imagem gerada em referência da sessão (o backend guarda uma cópia do arquivo).
@@ -56,6 +49,7 @@ export function useReferenciaDeBroll(sessaoId: string) {
 export function useApagarReferencia(sessaoId: string) {
   const clienteQuery = useQueryClient()
   return useMutation({
+    meta: { erroNaTela: true },
     mutationFn: (referenciaId: string) =>
       apagarNaApi(`/sessoes/${encodeURIComponent(sessaoId)}/referencias/${encodeURIComponent(referenciaId)}`),
     onSuccess: () => clienteQuery.invalidateQueries({ queryKey: ['sessoes', sessaoId] }),

@@ -268,7 +268,7 @@ async def _executar(criacao_id: str) -> None:
         raise
     except Exception:
         log.exception("Erro inesperado na geração %s", criacao_id)
-        _marcar_falha(criacao_id, "Erro inesperado na geração. Tente de novo.")
+        _marcar_falha(criacao_id, "Algo deu errado no FillFrame durante a geração. Detalhes no terminal do backend.")
 
 
 def cancelar(criacao_ids: list[str]) -> None:

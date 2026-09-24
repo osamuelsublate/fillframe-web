@@ -89,7 +89,7 @@ export default function GravadorAudio({ desativado, aoTerminar, aoErro, aoMudarG
 
   if (estado === 'gravando') {
     return (
-      <div className="flex flex-1 items-center gap-3 px-2 py-1.5">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 px-2 py-1.5">
         <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" aria-hidden />
         <span className="text-sm text-stone-700">Gravando…</span>
         <span className="font-mono text-sm tabular-nums text-stone-700">{minutosESegundos(segundos)}</span>
@@ -120,7 +120,7 @@ export default function GravadorAudio({ desativado, aoTerminar, aoErro, aoMudarG
       disabled={desativado || estado === 'pedindo'}
       title="Gravar áudio"
       aria-label="Gravar áudio"
-      className="rounded-xl p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50"
+      className="shrink-0 rounded-xl p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
         <rect x="9" y="3" width="6" height="12" rx="3" />

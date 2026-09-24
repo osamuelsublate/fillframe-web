@@ -10,6 +10,7 @@ export type Status = {
 export function useStatus() {
   return useQuery({
     queryKey: ['status'],
+    meta: { erroNaTela: true },
     queryFn: () => pedir<Status>('/status'),
     retry: false,
   })

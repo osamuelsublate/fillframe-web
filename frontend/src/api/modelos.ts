@@ -33,6 +33,7 @@ export type ModeloMidia = {
 export function useModelos(tipo: TipoMidia, busca: string) {
   return useQuery({
     queryKey: ['modelos', tipo, busca],
+    meta: { erroNaTela: true },
     queryFn: () => {
       const parametros = busca.trim() ? `?busca=${encodeURIComponent(busca.trim())}` : ''
       return pedir<ModeloMidia[]>(`/modelos/${tipo}${parametros}`)
@@ -49,6 +50,7 @@ export function useModelos(tipo: TipoMidia, busca: string) {
 export function useAtualizarModelos() {
   const clienteQuery = useQueryClient()
   return useMutation({
+    meta: { erroNaTela: true },
     mutationFn: () => pedir<{ atualizado_em: string | null }>('/modelos/atualizar', { method: 'POST' }),
     onSuccess: () => {
       clienteQuery.invalidateQueries({ queryKey: ['modelos'] })

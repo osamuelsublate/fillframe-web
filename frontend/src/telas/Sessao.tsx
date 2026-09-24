@@ -14,7 +14,8 @@ function sessaoDaUrl(): string | null {
 
 // Tela única: histórico à esquerda, chat no centro, painel à direita.
 export default function Sessao() {
-  const [historicoAberto, setHistoricoAberto] = useState(true)
+  // Em janelas estreitas o histórico abre por cima do chat; por isso começa fechado.
+  const [historicoAberto, setHistoricoAberto] = useState(() => !janelaEstreita())
   const [painelAberto, setPainelAberto] = useState(true)
   // Criação em destaque no painel (quando a LLM prepara um rascunho ou a pessoa clica em "revisar").
   const [destaque, setDestaque] = useState<Destaque | null>(null)
@@ -72,10 +73,23 @@ export default function Sessao() {
     criarSessao.mutate({}, { onSuccess: (nova) => abrir(nova.id) })
   }
 
+  // Na janela estreita, escolher uma sessão fecha o histórico (que está por cima do chat).
+  function fecharHistoricoSeEstreita() {
+    if (janelaEstreita()) setHistoricoAberto(false)
+  }
+
   return (
     <div className="flex h-full overflow-hidden">
       {historicoAberto && (
-        <aside className="flex w-64 shrink-0 flex-col border-r border-stone-200 bg-stone-100">
+        <button
+          type="button"
+          aria-label="Fechar histórico"
+          onClick={() => setHistoricoAberto(false)}
+          className="fixed inset-0 z-30 bg-black/20 lg:hidden"
+        />
+      )}
+      {historicoAberto && (
+        <aside className="fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-stone-200 bg-stone-100 shadow-xl lg:static lg:z-auto lg:shadow-none">
           <div className="flex h-12 items-center justify-between px-3">
             <span className="font-semibold tracking-tight">FillFrame</span>
             <BotaoIcone titulo="Fechar histórico" aoClicar={() => setHistoricoAberto(false)}>
@@ -88,8 +102,14 @@ export default function Sessao() {
             erro={sessoes.isError ? sessoes.error.message : null}
             sessaoAbertaId={sessaoId}
             criando={criarSessao.isPending}
-            aoAbrir={(id) => id !== sessaoId && abrir(id)}
-            aoCriar={novaSessao}
+            aoAbrir={(id) => {
+              if (id !== sessaoId) abrir(id)
+              fecharHistoricoSeEstreita()
+            }}
+            aoCriar={() => {
+              novaSessao()
+              fecharHistoricoSeEstreita()
+            }}
             // Apagou a sessão aberta: vai para a próxima do histórico (ou cria uma nova).
             aoApagar={(id) => id === sessaoId && abrir(null, true)}
           />
@@ -106,7 +126,7 @@ export default function Sessao() {
             )}
             <span className="truncate text-sm text-stone-600">{sessao.data?.nome ?? ''}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             {sessao.data && <SeletorLlm key={sessao.data.id} sessao={sessao.data} />}
             {!painelAberto && (
               <BotaoIcone titulo="Abrir painel" aoClicar={() => setPainelAberto(true)}>
@@ -119,7 +139,7 @@ export default function Sessao() {
         {aviso && (
           <div
             role="alert"
-            className="absolute top-14 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800 shadow-sm"
+            className="absolute top-14 left-1/2 z-10 max-w-[90%] -translate-x-1/2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800 shadow-sm"
           >
             {aviso}
           </div>
@@ -209,4 +229,9 @@ function BotaoIcone({ titulo, aoClicar, children }: PropsBotaoIcone) {
       {children}
     </button>
   )
+}
+
+// Menos de 1024 px: não cabem histórico, chat e painel lado a lado.
+function janelaEstreita() {
+  return window.matchMedia('(max-width: 1023px)').matches
 }

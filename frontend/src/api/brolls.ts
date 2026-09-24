@@ -26,6 +26,7 @@ export type FiltrosGaleria = {
 export function useGaleria(filtros: FiltrosGaleria, atualizacao: string) {
   return useQuery({
     queryKey: ['galeria', filtros, atualizacao],
+    meta: { erroNaTela: true },
     queryFn: () => {
       const parametros = new URLSearchParams()
       if (filtros.sessaoId) parametros.set('sessao_id', filtros.sessaoId)

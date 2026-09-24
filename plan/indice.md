@@ -2,8 +2,8 @@
 
 ## Onde estamos
 Fase ativa: 6
-Onda ativa: 6.1
-Última onda concluída: 5.4
+Onda ativa: 6.2
+Última onda concluída: 6.1
 Atualizado em: 2026-09-24
 
 ## Fases
