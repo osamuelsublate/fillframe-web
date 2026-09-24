@@ -22,6 +22,7 @@ from app.brolls.modelos import Broll
 from app.config import obter_config
 from app.criacoes.modelos import Criacao
 from app.db import AbrirBanco, agora
+from app.geracao.referencias import data_url
 from app.openrouter.erros import ErroOpenRouter
 from app.openrouter.imagens import gerar_imagens
 from app.openrouter.videos import (
@@ -30,6 +31,7 @@ from app.openrouter.videos import (
     consultar_video,
     enviar_video,
 )
+from app.referencias.modelos import Referencia
 
 log = logging.getLogger("fillframe")
 
@@ -58,6 +60,7 @@ class _Pedido:
     duracao: int | None
     extras: dict | None
     job: str | None
+    referencias: list[tuple[str, str]]  # (papel, caminho relativo do arquivo)
 
 
 @dataclass
@@ -103,7 +106,14 @@ def _comecar(criacao_id: str) -> _Pedido | None:
             # Se esperou na fila, o relógio começa agora, quando a geração começa de verdade.
             criacao.iniciada_em = agora()
             banco.commit()
+        ids = [ligacao.referencia_id for ligacao in criacao.referencias]
+        arquivos = {r.id: r.arquivo for r in banco.scalars(select(Referencia).where(Referencia.id.in_(ids)))}
         return _Pedido(
+            referencias=[
+                (ligacao.papel, arquivos[ligacao.referencia_id])
+                for ligacao in criacao.referencias
+                if ligacao.referencia_id in arquivos
+            ],
             sessao_id=criacao.sessao_id,
             tipo=criacao.tipo,
             modelo=criacao.modelo,
@@ -116,8 +126,28 @@ def _comecar(criacao_id: str) -> _Pedido | None:
         )
 
 
+def _referencias_em_data_url(pedido: _Pedido) -> tuple[dict[str, str], list[str]]:
+    """Separa (quadros, referências de estilo), já como data URL."""
+    quadros: dict[str, str] = {}
+    estilo: list[str] = []
+    try:
+        for papel, caminho in pedido.referencias:
+            if papel == "primeiro_quadro":
+                quadros["first_frame"] = data_url(caminho)
+            elif papel == "ultimo_quadro":
+                quadros["last_frame"] = data_url(caminho)
+            else:
+                estilo.append(data_url(caminho))
+    except OSError as erro:
+        raise ErroOpenRouter("Não foi possível ler uma das imagens de referência desta criação.") from erro
+    return quadros, estilo
+
+
 async def _imagem(pedido: _Pedido) -> _Resultado:
-    resultado = await gerar_imagens(pedido.modelo, pedido.prompt, pedido.proporcao, pedido.resolucao, pedido.extras)
+    _, estilo = _referencias_em_data_url(pedido)
+    resultado = await gerar_imagens(
+        pedido.modelo, pedido.prompt, pedido.proporcao, pedido.resolucao, pedido.extras, referencias=estilo
+    )
     arquivos = [
         (salvar_imagem(pedido.sessao_id, imagem.conteudo, imagem.formato), imagem.formato)
         for imagem in resultado.imagens
@@ -126,8 +156,16 @@ async def _imagem(pedido: _Pedido) -> _Resultado:
 
 
 async def _enviar_e_guardar(criacao_id: str, pedido: _Pedido) -> str:
+    quadros, estilo = _referencias_em_data_url(pedido)
     job = await enviar_video(
-        pedido.modelo, pedido.prompt, pedido.duracao, pedido.resolucao, pedido.proporcao, pedido.extras
+        pedido.modelo,
+        pedido.prompt,
+        pedido.duracao,
+        pedido.resolucao,
+        pedido.proporcao,
+        pedido.extras,
+        quadros=quadros,
+        referencias=estilo,
     )
     with AbrirBanco() as banco:
         criacao = banco.get(Criacao, criacao_id)

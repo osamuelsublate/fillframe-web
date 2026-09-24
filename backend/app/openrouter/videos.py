@@ -29,9 +29,20 @@ async def enviar_video(
     resolucao: str | None,
     proporcao: str | None,
     extras: dict | None = None,
+    quadros: dict[str, str] | None = None,
+    referencias: list[str] | None = None,
 ) -> str:
-    """Envia o pedido e devolve o id do job na OpenRouter."""
+    """Envia o pedido e devolve o id do job na OpenRouter.
+
+    `quadros`: {"first_frame" | "last_frame": data URL}; `referencias`: imagens de referência (data URL).
+    """
     corpo: dict = {"model": modelo, "prompt": prompt}
+    if quadros:
+        corpo["frame_images"] = [
+            {"type": "image_url", "image_url": {"url": url}, "frame_type": tipo} for tipo, url in quadros.items()
+        ]
+    if referencias:
+        corpo["input_references"] = [{"type": "image_url", "image_url": {"url": url}} for url in referencias]
     if duracao:
         corpo["duration"] = duracao
     if resolucao:

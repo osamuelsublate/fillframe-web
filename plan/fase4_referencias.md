@@ -4,7 +4,7 @@ Objetivo: mandar imagens, arquivos de texto e áudio no chat, usar referências 
 Depende de: Fase 3
 
 ## Onda 4.1: Anexar imagens e arquivos de texto no chat
-Status: pendente
+Status: concluída (2026-09-24)
 Objetivo: anexar imagens e arquivos de texto numa mensagem; a LLM passa a enxergá-los, e as imagens aparecem como referências da sessão no painel.
 Depende de: 2.2
 Ler antes: spec/dados.md (entidade Referência); spec/arquitetura.md (seção 4 "Uploads", tabela "Referências" da seção 6: "Enviar referência" e "Listar referências"; "Arquivo" de referência na tabela "Brolls e galeria"; "Contexto enviado à LLM"); spec/telas.md (regras "Validar uploads" e "Contexto da LLM")
@@ -31,7 +31,7 @@ Teste da pessoa:
 4. Tente anexar um PDF ou uma imagem com mais de 20 MB: deve aparecer "Tipo de arquivo não aceito" ou "Imagem acima de 20 MB".
 
 ## Onda 4.2: Referências nas criações e imagem virando vídeo
-Status: pendente
+Status: concluída (2026-09-24)
 Objetivo: escolher referências para uma criação (como estilo, primeiro quadro ou último quadro) e transformar uma imagem gerada em referência para um vídeo.
 Depende de: 4.1, 3.4
 Ler antes: spec/referencias/openrouter.md (`input_references` de imagens, `frame_images` e `input_references` de vídeos); spec/dados.md (entidade "Referência usada na criação"); spec/arquitetura.md (tabela "Referências": "Usar broll como referência"; tabela "Criações": regras de referência); spec/telas.md (regra "Validar a configuração contra o modelo", parte do número de referências; "Fluxo de uso diário" passo 6)
@@ -58,7 +58,7 @@ Teste da pessoa:
 4. Escolha um modelo de vídeo que não aceita último quadro e tente marcar uma referência como "último quadro". A opção não aparece, ou aparece a mensagem "Este modelo não aceita último quadro".
 
 ## Onda 4.3: Áudio no chat
-Status: pendente
+Status: concluída (2026-09-24)
 Objetivo: gravar áudio no chat e mandar para a LLM, que entende o que foi falado (direto ou por transcrição).
 Depende de: 4.1
 Ler antes: spec/arquitetura.md (seção 2 "LLM e transcrição", seção 4 "Uploads"); spec/dados.md (Mensagem: `audio_referencia_id` e `transcricao`); spec/telas.md ("Chat", regra "Validar uploads")
@@ -69,7 +69,7 @@ Escopo:
   Não tocar: backend/app/criacoes/, backend/app/geracao/
 Tarefas:
 1. `backend/app/arquivos/upload.py`: aceitar áudio webm, mp3, wav e m4a até 25 MB (regra **Validar uploads**).
-2. `backend/app/openrouter/transcricao.py`: transcrever com o modelo em FILLFRAME_MODELO_TRANSCRICAO. Se estiver vazio, usar o primeiro modelo do catálogo que aceita áudio como entrada (*assumido*).
+2. `backend/app/openrouter/transcricao.py`: transcrever com o modelo em FILLFRAME_MODELO_TRANSCRICAO. Se estiver vazio, usar o Gemini Flash Lite mais novo do catálogo; na falta dele, o primeiro modelo do catálogo que aceita áudio como entrada (*assumido*; ajustado na execução após testes).
 3. `backend/app/chat/servico.py`: mensagem com `audio_referencia_id` e sem texto é válida; se a LLM da sessão `aceita_audio`, o áudio vai como parte de áudio; senão, transcreve antes e salva em `transcricao`. Em ambos os casos, a transcrição (quando existe) entra no contexto.
 4. `componentes/GravadorAudio.tsx`: botão de microfone com MediaRecorder, tempo de gravação, cancelar e enviar (sobe como referência `audio` e depois envia a mensagem).
 5. `Mensagem.tsx`: player de áudio na mensagem e texto transcrito abaixo, recolhível.

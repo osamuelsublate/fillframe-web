@@ -1,23 +1,72 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ErroApi } from '../api/cliente'
-import { useGerarCriacao, useSalvarCriacao, type Criacao, type Orientacao } from '../api/criacoes'
-import { useModelos, type TipoMidia } from '../api/modelos'
+import {
+  useGerarCriacao,
+  useSalvarCriacao,
+  type Criacao,
+  type Orientacao,
+  type Papel,
+  type ReferenciaUsada,
+} from '../api/criacoes'
+import { useModelos, type ModeloMidia, type TipoMidia } from '../api/modelos'
+import type { Referencia } from '../api/referencias'
 import { proporcaoPara } from '../utils/proporcao'
 import SeletorModelo, { CartaoModelo } from './SeletorModelo'
+
+// Valores iniciais de uma criação nova (ex.: "Usar como referência" abre um vídeo com a imagem no 1º quadro).
+export type InicioCriacao = {
+  tipo: TipoMidia
+  orientacao: Orientacao
+  referencias: ReferenciaUsada[]
+}
 
 type Props = {
   sessaoId: string
   criacao: Criacao | null
+  inicio?: InicioCriacao | null
+  referenciasDaSessao: Referencia[]
   aoFechar: () => void
 }
 
+const NOMES_PAPEL: Record<Papel, string> = {
+  referencia: 'Referência de estilo',
+  primeiro_quadro: 'Primeiro quadro',
+  ultimo_quadro: 'Último quadro',
+}
+
+// Papéis que o modelo aceita (a OpenRouter diz que referência de imagem funciona em todo modelo de vídeo).
+function papeisAceitos(tipo: TipoMidia, modelo: ModeloMidia | null): Papel[] {
+  if (!modelo) return []
+  const c = modelo.capacidades
+  const papeis: Papel[] = []
+  if (c.aceita_referencia !== false && (tipo === 'video' || (c.max_referencias ?? 0) > 0)) papeis.push('referencia')
+  if (tipo === 'video' && c.aceita_primeiro_quadro) papeis.push('primeiro_quadro')
+  if (tipo === 'video' && c.aceita_ultimo_quadro) papeis.push('ultimo_quadro')
+  return papeis
+}
+
+// Largura e altura reais de uma imagem (para avisar quando a orientação não combina).
+function useDimensoes(url: string | null) {
+  const [dimensoes, setDimensoes] = useState<{ url: string; largura: number; altura: number } | null>(null)
+  useEffect(() => {
+    if (!url) return
+    const imagem = new Image()
+    imagem.onload = () => setDimensoes({ url, largura: imagem.naturalWidth, altura: imagem.naturalHeight })
+    imagem.src = url
+  }, [url])
+  return dimensoes && dimensoes.url === url ? dimensoes : null
+}
+
 // Configuração de uma criação (imagem ou vídeo) antes de gerar.
-export default function ConfigCriacao({ sessaoId, criacao, aoFechar }: Props) {
-  const [tipo, setTipo] = useState<TipoMidia>(criacao?.tipo ?? 'imagem')
+export default function ConfigCriacao({ sessaoId, criacao, inicio, referenciasDaSessao, aoFechar }: Props) {
+  const [tipo, setTipo] = useState<TipoMidia>(criacao?.tipo ?? inicio?.tipo ?? 'imagem')
   const [modeloId, setModeloId] = useState<string | null>(criacao?.modelo ?? null)
   const [trocandoModelo, setTrocandoModelo] = useState(!criacao)
   const [prompt, setPrompt] = useState(criacao?.prompt ?? '')
-  const [orientacao, setOrientacao] = useState<Orientacao>(criacao?.orientacao ?? 'vertical')
+  const [orientacao, setOrientacao] = useState<Orientacao>(criacao?.orientacao ?? inicio?.orientacao ?? 'vertical')
+  const [referencias, setReferencias] = useState<ReferenciaUsada[]>(
+    criacao?.referencias ?? inicio?.referencias ?? [],
+  )
   const [resolucao, setResolucao] = useState<string | null>(criacao?.resolucao ?? null)
   const [duracao, setDuracao] = useState<number | null>(criacao?.duracao_segundos ?? null)
   const [comAudio, setComAudio] = useState<boolean>(criacao?.parametros_extras?.generate_audio === true)
@@ -31,10 +80,34 @@ export default function ConfigCriacao({ sessaoId, criacao, aoFechar }: Props) {
   const proporcao = modelo ? proporcaoPara(orientacao, modelo.capacidades.proporcoes) : null
   const duracoes = [...(modelo?.capacidades.duracoes ?? [])].sort((a, b) => a - b)
   const ehVideo = tipo === 'video'
+  const papeis = papeisAceitos(tipo, modelo)
+  const imagensDaSessao = referenciasDaSessao.filter((r) => r.tipo === 'imagem')
+  const primeiroQuadro = referencias.find((r) => r.papel === 'primeiro_quadro')
+  const urlPrimeiroQuadro = referenciasDaSessao.find((r) => r.id === primeiroQuadro?.id)?.url ?? null
+  const dimensoesQuadro = useDimensoes(ehVideo ? urlPrimeiroQuadro : null)
+  const orientacaoDoQuadro = dimensoesQuadro
+    ? dimensoesQuadro.altura > dimensoesQuadro.largura
+      ? 'vertical'
+      : dimensoesQuadro.largura > dimensoesQuadro.altura
+        ? 'horizontal'
+        : null
+    : null
+
+  function papelDe(id: string): Papel | null {
+    return referencias.find((r) => r.id === id)?.papel ?? null
+  }
+
+  function mudarPapel(id: string, papel: Papel | null) {
+    setReferencias((atuais) => {
+      // Primeiro e último quadro: só uma imagem em cada.
+      const semEla = atuais.filter((r) => r.id !== id && (papel === 'referencia' || r.papel !== papel))
+      return papel ? [...semEla, { id, papel }] : semEla
+    })
+  }
 
   const erro = salvar.error instanceof ErroApi ? salvar.error : null
   const erroDo = (campo: string) => (erro?.campo === campo ? erro.message : null)
-  const erroGeral = erro && !['modelo', 'prompt', 'orientacao', 'proporcao', 'resolucao', 'duracao', 'audio'].includes(erro.campo ?? '')
+  const erroGeral = erro && !['modelo', 'prompt', 'orientacao', 'proporcao', 'resolucao', 'duracao', 'audio', 'referencias'].includes(erro.campo ?? '')
     ? erro.message
     : salvar.error && !erro
       ? salvar.error.message
@@ -59,6 +132,7 @@ export default function ConfigCriacao({ sessaoId, criacao, aoFechar }: Props) {
           resolucao,
           duracao: ehVideo ? duracao : null,
           parametros_extras: ehVideo && modelo?.capacidades.gera_audio ? { generate_audio: comAudio } : null,
+          referencias,
         },
       },
       {
@@ -95,6 +169,8 @@ export default function ConfigCriacao({ sessaoId, criacao, aoFechar }: Props) {
               setTrocandoModelo(true)
               setResolucao(null)
               setDuracao(null)
+              // Primeiro e último quadro só existem em vídeo.
+              if (novo !== 'video') setReferencias((atuais) => atuais.filter((r) => r.papel === 'referencia'))
             }}
           />
         </Campo>
@@ -155,6 +231,12 @@ export default function ConfigCriacao({ sessaoId, criacao, aoFechar }: Props) {
             valor={orientacao}
             aoMudar={(novo) => setOrientacao(novo as Orientacao)}
           />
+          {orientacaoDoQuadro && orientacaoDoQuadro !== orientacao && (
+            <p className="mt-1.5 rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
+              A imagem do primeiro quadro é {orientacaoDoQuadro} e o vídeo está {orientacao}: o vídeo vai ter faixas
+              pretas. Use {orientacaoDoQuadro} para ocupar a tela toda.
+            </p>
+          )}
           {modelo && (
             <p className="mt-1.5 text-xs text-stone-500">
               {proporcao
@@ -200,6 +282,62 @@ export default function ConfigCriacao({ sessaoId, criacao, aoFechar }: Props) {
             </label>
           </Campo>
         )}
+
+        <Campo rotulo="Referências" erro={erroDo('referencias')}>
+          {imagensDaSessao.length === 0 ? (
+            <p className="text-xs text-stone-500">
+              Nenhuma imagem na sessão. Anexe imagens no chat ou use "Usar como referência" numa imagem gerada.
+            </p>
+          ) : (
+            <ul className="space-y-1.5">
+              {imagensDaSessao.map((referencia) => {
+                const papel = papelDe(referencia.id)
+                // Papel escolhido que não está na lista: ainda sem modelo, ou o modelo não aceita.
+                const foraDaLista = papel !== null && !papeis.includes(papel)
+                const invalido = foraDaLista && modelo !== null
+                return (
+                  <li key={referencia.id} className="flex items-center gap-2">
+                    <img
+                      src={referencia.url}
+                      alt={referencia.nome_original ?? 'Imagem de referência'}
+                      className="h-12 w-12 shrink-0 rounded-md border border-stone-200 object-cover"
+                    />
+                    <span className="min-w-0 flex-1 truncate text-xs text-stone-600">
+                      {referencia.nome_original ?? 'imagem'}
+                    </span>
+                    <select
+                      value={papel ?? ''}
+                      onChange={(evento) => mudarPapel(referencia.id, (evento.target.value || null) as Papel | null)}
+                      aria-label={`Uso de ${referencia.nome_original ?? 'imagem'}`}
+                      className={`rounded-md border bg-white px-2 py-1 text-xs outline-none ${
+                        invalido ? 'border-red-300 text-red-800' : 'border-stone-300'
+                      }`}
+                    >
+                      <option value="">Não usar</option>
+                      {foraDaLista && (
+                        <option value={papel}>
+                          {NOMES_PAPEL[papel]}
+                          {invalido ? ' (este modelo não aceita)' : ''}
+                        </option>
+                      )}
+                      {papeis.map((opcao) => (
+                        <option key={opcao} value={opcao}>
+                          {NOMES_PAPEL[opcao]}
+                        </option>
+                      ))}
+                    </select>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+          {modelo && ehVideo && !modelo.capacidades.aceita_ultimo_quadro && (
+            <p className="mt-1.5 text-xs text-stone-500">Este modelo não aceita último quadro.</p>
+          )}
+          {modelo && ehVideo && !modelo.capacidades.aceita_primeiro_quadro && (
+            <p className="mt-1.5 text-xs text-stone-500">Este modelo não aceita primeiro quadro.</p>
+          )}
+        </Campo>
 
         <Campo rotulo="Resolução" erro={erroDo('resolucao')}>
           <select

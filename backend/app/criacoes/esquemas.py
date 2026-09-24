@@ -10,7 +10,9 @@ Orientacao = Literal["vertical", "horizontal"]
 
 
 class ReferenciaUsada(BaseModel):
-    id: str
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str  # id da Referência da sessão
     papel: Literal["referencia", "primeiro_quadro", "ultimo_quadro"] = "referencia"
 
 
@@ -23,7 +25,7 @@ class CriacaoCriar(BaseModel):
     duracao: int | None = None
     resolucao: str | None = Field(default=None, max_length=20)
     parametros_extras: dict | None = None
-    referencias: list[ReferenciaUsada] = []
+    referencias: list[ReferenciaUsada] = Field(default=[], max_length=16)
 
 
 class CriacaoAlterar(BaseModel):
@@ -35,7 +37,7 @@ class CriacaoAlterar(BaseModel):
     duracao: int | None = None
     resolucao: str | None = Field(default=None, max_length=20)
     parametros_extras: dict | None = None
-    referencias: list[ReferenciaUsada] | None = None
+    referencias: list[ReferenciaUsada] | None = Field(default=None, max_length=16)
 
 
 class CriacaoSaida(BaseModel):
@@ -63,3 +65,4 @@ class CriacaoSaida(BaseModel):
     custo_usd: float | None
     criada_em: datetime
     brolls: list[BrollSaida] = []
+    referencias: list[ReferenciaUsada] = []

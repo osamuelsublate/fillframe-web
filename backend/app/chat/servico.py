@@ -6,12 +6,16 @@ from collections.abc import AsyncIterator
 
 from fastapi import HTTPException
 
-from app.chat import repositorio, tools
+from app.chat import anexos, llms, repositorio, tools
 from app.chat.esquemas import MensagemEnviar, MensagemSaida
 from app.chat.modelos import Mensagem
 from app.db import AbrirBanco, agora
 from app.criacoes import repositorio as repositorio_criacoes
+from app.arquivos.armazenamento import CaminhoInvalido, caminho_seguro
 from app.openrouter.chat import ErroOpenRouter, conversar_com_tools
+from app.openrouter.transcricao import parte_de_audio, transcrever
+from app.referencias import repositorio as repositorio_referencias
+from app.referencias.modelos import Referencia
 from app.sessoes import repositorio as repositorio_sessoes
 
 log = logging.getLogger("fillframe")
@@ -26,12 +30,17 @@ Como trabalhar:
 - Quando ele pedir brolls, prepare cada um com a ferramenta preparar_criacao (um rascunho por broll). \
 Antes, use listar_modelos para escolher um modelo que aceite o formato e a duração certos. Prefira \
 modelos com bom custo-benefício (ex.: 720p para vídeo) a menos que ele peça qualidade máxima.
+- Quando ele anexar imagens (prints, referências visuais) ou arquivos de texto (roteiros, código), \
+use esse material como base: descreva o que vê, siga o roteiro e reproduza estilo, cores e textos.
 - Os brolls precisam parecer reais: interfaces, código, terminais e mensagens de erro fiéis à \
 realidade técnica, com texto legível e coerente. Escreva prompts detalhados (cena, enquadramento, \
 luz, estilo, texto exato que aparece na tela).
 - Os vídeos são publicados na vertical (9:16) e na horizontal (16:9). Use o formato pedido; se ele \
 não disser, pergunte ou escolha vertical para Reels.
 - Para mudar um rascunho que ainda não foi gerado, use ajustar_criacao com o criacao_id.
+- Imagens da sessão podem ser usadas nas criações pelo parâmetro referencias: como 'referencia' (estilo \
+ou conteúdo) ou, em vídeo, como 'primeiro_quadro'/'ultimo_quadro' (o vídeo começa ou termina \
+exatamente nessa imagem). Para animar uma imagem, use-a como primeiro_quadro num modelo que aceite.
 - Se uma ferramenta devolver erro, leia a mensagem, corrija os parâmetros e tente de novo.
 - Você NUNCA gera imagens ou vídeos. Não existe ferramenta para isso e você não pode disparar uma \
 geração. Se ele pedir para você gerar, explique que só ele pode clicar em Gerar no painel, e \
@@ -40,29 +49,73 @@ que o rascunho já está pronto para isso.
 clicar em Gerar.
 - Responda em português do Brasil, de forma direta e organizada."""
 
-SEM_TEXTO = "Escreva uma mensagem antes de enviar."
+SEM_TEXTO = "Escreva uma mensagem ou grave um áudio antes de enviar."
+# Formato de cada áudio aceito, como a OpenRouter espera em `input_audio.format`.
+FORMATO_AUDIO_OPENROUTER = {"audio/webm": "webm", "audio/mpeg": "mp3", "audio/wav": "wav", "audio/mp4": "m4a"}
 
 
 def listar_mensagens(banco, sessao_id: str) -> list[Mensagem]:
     return repositorio.listar(banco, sessao_id)
 
 
-def _resumo_das_criacoes(criacoes) -> str:
-    if not criacoes:
-        return "Criações desta sessão: nenhuma ainda."
-    linhas = ["Criações desta sessão (mais recentes primeiro):"]
-    for criacao in criacoes[:30]:
-        linhas.append(json.dumps(tools.resumo_criacao(criacao), ensure_ascii=False))
+def _resumo_da_sessao(criacoes, referencias: list[Referencia]) -> str:
+    linhas = []
+    if criacoes:
+        linhas.append("Criações desta sessão (mais recentes primeiro):")
+        linhas += [json.dumps(tools.resumo_criacao(c), ensure_ascii=False) for c in criacoes[:30]]
+    else:
+        linhas.append("Criações desta sessão: nenhuma ainda.")
+    if referencias:
+        linhas.append("Referências desta sessão (arquivos que o usuário anexou ou imagens geradas usadas como base):")
+        linhas += [
+            json.dumps(
+                {"referencia_id": r.id, "tipo": r.tipo, "origem": r.origem, "nome": r.nome_original},
+                ensure_ascii=False,
+            )
+            for r in referencias
+        ]
     return "\n".join(linhas)
 
 
-def _contexto(mensagens: list[Mensagem], criacoes) -> list[dict]:
-    """Regra "Contexto da LLM": prompt de sistema, resumo das criações e mensagens da sessão
-    (as referências entram na fase 4)."""
+def _ler_audio(referencia: Referencia) -> bytes:
+    return caminho_seguro(referencia.arquivo).read_bytes()
+
+
+def _conteudo_de_voz(mensagem: Mensagem, audio: Referencia | None, aceita_audio: bool) -> tuple[str, dict | None]:
+    """(texto, parte de áudio): a LLM que entende áudio recebe o áudio; as outras, a transcrição."""
+    texto = mensagem.texto or ""
+    if audio is not None and aceita_audio:
+        try:
+            parte = parte_de_audio(_ler_audio(audio), FORMATO_AUDIO_OPENROUTER.get(audio.formato, "webm"))
+            return texto or "(mensagem de voz)", parte
+        except (CaminhoInvalido, OSError):
+            log.warning("Não foi possível ler o áudio %s", audio.id)
+    if mensagem.transcricao:
+        voz = f"[Mensagem de voz, transcrita]: {mensagem.transcricao}"
+        return f"{texto}\n\n{voz}" if texto else voz, None
+    return texto, None
+
+
+def _contexto(
+    mensagens: list[Mensagem],
+    criacoes,
+    referencias: list[Referencia],
+    aceita_imagem: bool,
+    aceita_audio: bool,
+) -> list[dict]:
+    """Regra "Contexto da LLM": prompt de sistema, resumo das criações e referências, e as mensagens
+    da sessão com os anexos de cada uma (imagens como imagem, textos no próprio texto, voz como
+    áudio ou transcrição)."""
     contexto = [
         {"role": "system", "content": PROMPT_DE_SISTEMA},
-        {"role": "system", "content": _resumo_das_criacoes(criacoes)},
+        {"role": "system", "content": _resumo_da_sessao(criacoes, referencias)},
     ]
+    por_id = {r.id: r for r in referencias}
+    anexos_por_mensagem: dict[str, list[Referencia]] = {}
+    for referencia in referencias:
+        if referencia.mensagem_id and referencia.tipo != "audio":
+            anexos_por_mensagem.setdefault(referencia.mensagem_id, []).append(referencia)
+
     for mensagem in mensagens:
         if mensagem.autor == "tool":
             # Uma rodada em que a LLM usou ferramentas: o pedido e o resultado de cada uma.
@@ -87,12 +140,23 @@ def _contexto(mensagens: list[Mensagem], criacoes) -> list[dict]:
                 contexto.append({"role": "tool", "tool_call_id": c["id"], "content": c["resultado"]})
             continue
 
+        if mensagem.autor == "usuario":
+            audio = por_id.get(mensagem.audio_referencia_id) if mensagem.audio_referencia_id else None
+            texto, parte_audio = _conteudo_de_voz(mensagem, audio, aceita_audio)
+            if not texto and not parte_audio:
+                continue
+            conteudo = anexos.conteudo_do_usuario(texto, anexos_por_mensagem.get(mensagem.id, []), aceita_imagem)
+            if parte_audio:
+                conteudo = (conteudo if isinstance(conteudo, list) else [{"type": "text", "text": conteudo}]) + [
+                    parte_audio
+                ]
+            contexto.append({"role": "user", "content": conteudo})
+            continue
+
         texto = mensagem.texto or mensagem.transcricao
         if not texto:
             continue
-        if mensagem.autor == "usuario":
-            contexto.append({"role": "user", "content": texto})
-        elif mensagem.autor == "llm":
+        if mensagem.autor == "llm":
             contexto.append({"role": "assistant", "content": texto})
     return contexto
 
@@ -101,10 +165,21 @@ def _evento(tipo: str, dados: dict) -> str:
     return f"event: {tipo}\ndata: {json.dumps(dados, ensure_ascii=False, default=str)}\n\n"
 
 
-def preparar_envio(sessao_id: str, dados: MensagemEnviar) -> tuple[str, list[dict], Mensagem]:
-    """Valida, salva a mensagem do usuário e monta o contexto. Erros aqui viram resposta normal (não SSE)."""
+def _montar_contexto(sessao_id: str, llm: str) -> list[dict]:
+    with AbrirBanco() as banco:
+        return _contexto(
+            repositorio.listar(banco, sessao_id),
+            repositorio_criacoes.listar(banco, sessao_id),
+            repositorio_referencias.listar(banco, sessao_id),
+            llms.aceita_imagem(banco, llm),
+            llms.aceita_audio(banco, llm),
+        )
+
+
+def preparar_envio(sessao_id: str, dados: MensagemEnviar) -> tuple[str, Mensagem]:
+    """Valida e salva a mensagem do usuário. Erros aqui viram resposta normal (não SSE)."""
     texto = (dados.texto or "").strip()
-    if not texto:
+    if not texto and not dados.audio_referencia_id:
         raise HTTPException(status_code=422, detail=SEM_TEXTO)
 
     with AbrirBanco() as banco:
@@ -112,14 +187,59 @@ def preparar_envio(sessao_id: str, dados: MensagemEnviar) -> tuple[str, list[dic
         if sessao is None:
             raise HTTPException(status_code=404, detail="Sessão não encontrada")
 
-        mensagem = Mensagem(sessao_id=sessao_id, autor="usuario", texto=texto, criada_em=agora())
+        # Anexos: todos precisam ser desta sessão.
+        ids = list(dict.fromkeys(dados.referencia_ids))
+        anexadas = repositorio_referencias.buscar_varias(banco, sessao_id, ids)
+        if len(anexadas) != len(ids):
+            raise HTTPException(status_code=400, detail="Um dos anexos não pertence a esta sessão.")
+
+        # Áudio gravado: precisa ser desta sessão e ser áudio.
+        if dados.audio_referencia_id:
+            audios = repositorio_referencias.buscar_varias(banco, sessao_id, [dados.audio_referencia_id])
+            if not audios or audios[0].tipo != "audio":
+                raise HTTPException(status_code=400, detail="O áudio enviado não pertence a esta sessão.")
+            anexadas = [*anexadas, audios[0]]
+
+        mensagem = Mensagem(
+            sessao_id=sessao_id,
+            autor="usuario",
+            texto=texto or None,
+            audio_referencia_id=dados.audio_referencia_id,
+            criada_em=agora(),
+        )
         banco.add(mensagem)
+        banco.flush()
+        for referencia in anexadas:
+            if referencia.mensagem_id is None:
+                referencia.mensagem_id = mensagem.id
         sessao.ultimo_uso_em = mensagem.criada_em
         banco.commit()
         banco.refresh(mensagem)
+        return sessao.llm, mensagem
 
-        contexto = _contexto(repositorio.listar(banco, sessao_id), repositorio_criacoes.listar(banco, sessao_id))
-        return sessao.llm, contexto, mensagem
+
+async def _transcrever_se_preciso(mensagem: Mensagem, llm: str) -> str | None:
+    """Se a LLM da sessão não entende áudio, transcreve antes e guarda na mensagem. Devolve a transcrição."""
+    if not mensagem.audio_referencia_id or mensagem.transcricao:
+        return None
+    with AbrirBanco() as banco:
+        if llms.aceita_audio(banco, llm):
+            return None  # O áudio vai direto para a LLM.
+        modelo = llms.modelo_de_transcricao(banco)
+        audio = banco.get(Referencia, mensagem.audio_referencia_id)
+    if modelo is None:
+        raise ErroOpenRouter("Nenhum modelo de transcrição disponível. Defina FILLFRAME_MODELO_TRANSCRICAO no .env.")
+    try:
+        conteudo = _ler_audio(audio)
+    except (CaminhoInvalido, OSError) as erro:
+        raise ErroOpenRouter("Não foi possível ler o áudio gravado.") from erro
+
+    transcricao = await transcrever(modelo, conteudo, FORMATO_AUDIO_OPENROUTER.get(audio.formato, "webm"))
+    with AbrirBanco() as banco:
+        salva = banco.get(Mensagem, mensagem.id)
+        salva.transcricao = transcricao
+        banco.commit()
+    return transcricao
 
 
 def _salvar(sessao_id: str, autor: str, texto: str | None, chamadas: list[dict] | None = None) -> Mensagem:
@@ -135,10 +255,20 @@ def _salvar(sessao_id: str, autor: str, texto: str | None, chamadas: list[dict] 
         return mensagem
 
 
-async def responder(sessao_id: str, llm: str, contexto: list[dict], mensagem_usuario: Mensagem) -> AsyncIterator[str]:
-    """Eventos SSE: `usuario` (mensagem salva), `texto` (pedaços), `tool` (rascunho preparado ou
-    ajustado), `fim` ou `erro`."""
+async def responder(sessao_id: str, llm: str, mensagem_usuario: Mensagem) -> AsyncIterator[str]:
+    """Eventos SSE: `usuario` (mensagem salva), `transcricao` (texto do áudio, quando transcrito),
+    `texto` (pedaços), `tool` (rascunho preparado ou ajustado), `fim` ou `erro`."""
     yield _evento("usuario", MensagemSaida.model_validate(mensagem_usuario).model_dump(mode="json"))
+
+    try:
+        transcricao = await _transcrever_se_preciso(mensagem_usuario, llm)
+    except ErroOpenRouter as falha:
+        yield _evento("erro", {"erro": f"Não foi possível transcrever o áudio. {falha}"})
+        return
+    if transcricao:
+        yield _evento("transcricao", {"mensagem_id": mensagem_usuario.id, "transcricao": transcricao})
+
+    contexto = _montar_contexto(sessao_id, llm)
 
     async def executar(nome: str, argumentos: str):
         return await tools.executar(sessao_id, nome, argumentos)

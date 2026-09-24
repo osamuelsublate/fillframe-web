@@ -13,9 +13,9 @@ rotas = APIRouter(prefix="/api", tags=["chat"])
 
 @rotas.post("/sessoes/{sessao_id}/mensagens")
 def enviar(sessao_id: str, dados: MensagemEnviar):
-    llm, contexto, mensagem = servico.preparar_envio(sessao_id, dados)
+    llm, mensagem = servico.preparar_envio(sessao_id, dados)
     return StreamingResponse(
-        servico.responder(sessao_id, llm, contexto, mensagem),
+        servico.responder(sessao_id, llm, mensagem),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

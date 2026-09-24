@@ -1,17 +1,52 @@
 import type { ReactNode } from 'react'
 
+export type Anexo = {
+  id: string
+  tipo: 'imagem' | 'texto' | 'audio'
+  nome: string
+  url: string | null // null enquanto ainda não foi enviado
+}
+
 type Props = {
   autor: 'usuario' | 'llm'
   texto: string
+  anexos?: Anexo[]
+  audioUrl?: string | null
+  transcricao?: string | null
+  transcrevendo?: boolean
   erro?: boolean
   digitando?: boolean
 }
 
-export default function Mensagem({ autor, texto, erro, digitando }: Props) {
+export default function Mensagem({
+  autor,
+  texto,
+  anexos = [],
+  audioUrl,
+  transcricao,
+  transcrevendo = false,
+  erro,
+  digitando,
+}: Props) {
   if (autor === 'usuario') {
     return (
-      <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-2xl bg-stone-200 px-4 py-2.5 whitespace-pre-wrap">{texto}</div>
+      <div className="flex flex-col items-end gap-1.5">
+        {anexos.length > 0 && <ListaAnexos anexos={anexos} />}
+        {audioUrl && (
+          <div className="w-80 max-w-[85%] space-y-1.5 rounded-2xl bg-stone-200 px-3 py-2.5">
+            <audio src={audioUrl} controls preload="metadata" className="h-9 w-full" />
+            {transcrevendo && <p className="animate-pulse px-1 text-xs text-stone-500">Transcrevendo…</p>}
+            {transcricao && (
+              <details className="px-1 text-sm">
+                <summary className="cursor-pointer text-xs text-stone-600 select-none">Texto transcrito</summary>
+                <p className="mt-1 whitespace-pre-wrap text-stone-800">{transcricao}</p>
+              </details>
+            )}
+          </div>
+        )}
+        {texto && (
+          <div className="max-w-[85%] rounded-2xl bg-stone-200 px-4 py-2.5 whitespace-pre-wrap">{texto}</div>
+        )}
       </div>
     )
   }
@@ -28,6 +63,31 @@ export default function Mensagem({ autor, texto, erro, digitando }: Props) {
     <div className="space-y-3 leading-relaxed">
       <Markdown texto={texto} />
       {digitando && <span className="inline-block h-4 w-2 animate-pulse bg-stone-400 align-middle" />}
+    </div>
+  )
+}
+
+export function ListaAnexos({ anexos }: { anexos: Anexo[] }) {
+  return (
+    <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5">
+      {anexos.map((anexo) =>
+        anexo.tipo === 'imagem' && anexo.url ? (
+          <a key={anexo.id} href={anexo.url} target="_blank" rel="noopener noreferrer" title={anexo.nome}>
+            <img src={anexo.url} alt={anexo.nome} className="h-24 w-24 rounded-lg border border-stone-200 object-cover" />
+          </a>
+        ) : (
+          <a
+            key={anexo.id}
+            href={anexo.url ?? undefined}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs text-stone-700"
+          >
+            <span aria-hidden>📄</span>
+            <span className="max-w-40 truncate">{anexo.nome}</span>
+          </a>
+        ),
+      )}
     </div>
   )
 }

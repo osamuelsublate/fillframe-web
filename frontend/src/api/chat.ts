@@ -22,19 +22,26 @@ export type EventoTool = {
 }
 
 type AoReceber = {
+  aoTranscricao: (texto: string) => void
   aoTexto: (pedaco: string) => void
   aoTool: (evento: EventoTool) => void
   aoErro: (mensagem: string) => void
 }
 
-// Envia a mensagem e lê a resposta aos poucos (SSE: usuario, texto, tool, fim, erro).
-export async function enviarMensagem(sessaoId: string, texto: string, { aoTexto, aoTool, aoErro }: AoReceber) {
+// Envia a mensagem e lê a resposta aos poucos (SSE: usuario, transcricao, texto, tool, fim, erro).
+export async function enviarMensagem(
+  sessaoId: string,
+  texto: string,
+  referenciaIds: string[],
+  audioReferenciaId: string | null,
+  { aoTranscricao, aoTexto, aoTool, aoErro }: AoReceber,
+) {
   let resposta: Response
   try {
     resposta = await fetch(`/api/sessoes/${encodeURIComponent(sessaoId)}/mensagens`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ texto }),
+      body: JSON.stringify({ texto, referencia_ids: referenciaIds, audio_referencia_id: audioReferenciaId }),
     })
   } catch {
     aoErro('Não foi possível falar com o backend. Ele está rodando?')
@@ -62,6 +69,7 @@ export async function enviarMensagem(sessaoId: string, texto: string, { aoTexto,
     if (!dados) return
     const conteudo = JSON.parse(dados)
     if (evento === 'texto') aoTexto(conteudo.texto)
+    else if (evento === 'transcricao') aoTranscricao(conteudo.transcricao)
     else if (evento === 'tool') aoTool(conteudo)
     else if (evento === 'erro') {
       terminou = true

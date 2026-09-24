@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.criacoes import estimativa, repositorio, validacao
 from app.criacoes.esquemas import CriacaoAlterar, CriacaoCriar
-from app.criacoes.modelos import SITUACOES, Criacao
+from app.criacoes.modelos import SITUACOES, Criacao, CriacaoReferencia
 from app.db import agora
 from app.geracao import executor
 from app.sessoes import repositorio as repositorio_sessoes
@@ -29,6 +29,16 @@ def _criacao(banco: Session, sessao_id: str, criacao_id: str) -> Criacao:
     return criacao
 
 
+def _ligar_referencias(criacao: Criacao, pares: list[tuple[str, str]]) -> None:
+    """Deixa as ligações iguais a `pares`, mantendo as que já existem (evita apagar e recriar a mesma)."""
+    novos = set(pares)
+    criacao.referencias = [r for r in criacao.referencias if (r.referencia_id, r.papel) in novos]
+    existentes = {(r.referencia_id, r.papel) for r in criacao.referencias}
+    for referencia_id, papel in pares:
+        if (referencia_id, papel) not in existentes:
+            criacao.referencias.append(CriacaoReferencia(referencia_id=referencia_id, papel=papel))
+
+
 def listar(banco: Session, sessao_id: str, situacao: str | None = None) -> list[Criacao]:
     _sessao(banco, sessao_id)
     situacoes = [s.strip() for s in (situacao or "").split(",") if s.strip()]
@@ -43,6 +53,7 @@ def criar(banco: Session, sessao_id: str, dados: CriacaoCriar) -> Criacao:
     campos = validacao.validar(
         banco,
         validacao.Config(
+            sessao_id=sessao_id,
             tipo=dados.tipo,
             modelo=dados.modelo,
             prompt=dados.prompt,
@@ -55,6 +66,7 @@ def criar(banco: Session, sessao_id: str, dados: CriacaoCriar) -> Criacao:
             extras=dados.parametros_extras,
         ),
     )
+    pares = campos.pop("referencias")
     novo_id = uuid4().hex
     criacao = Criacao(
         id=novo_id,
@@ -66,6 +78,7 @@ def criar(banco: Session, sessao_id: str, dados: CriacaoCriar) -> Criacao:
         criada_em=agora(),
         **campos,
     )
+    _ligar_referencias(criacao, pares)
     sessao.ultimo_uso_em = criacao.criada_em
     return repositorio.salvar(banco, criacao)
 
@@ -83,6 +96,7 @@ def alterar(banco: Session, sessao_id: str, criacao_id: str, dados: CriacaoAlter
     campos = validacao.validar(
         banco,
         validacao.Config(
+            sessao_id=sessao_id,
             tipo=valor("tipo", criacao.tipo),
             modelo=valor("modelo", criacao.modelo),
             prompt=valor("prompt", criacao.prompt),
@@ -90,13 +104,16 @@ def alterar(banco: Session, sessao_id: str, criacao_id: str, dados: CriacaoAlter
             proporcao=valor("proporcao", criacao.proporcao),
             duracao=valor("duracao", criacao.duracao_segundos),
             resolucao=valor("resolucao", criacao.resolucao),
-            referencias=valor("referencias", []) or [],
+            referencias=valor("referencias", criacao.referencias) or [],
             explicitos=enviados,
             extras=valor("parametros_extras", criacao.parametros_extras),
         ),
     )
+    pares = campos.pop("referencias")
     for campo, novo in campos.items():
         setattr(criacao, campo, novo)
+    if "referencias" in enviados:
+        _ligar_referencias(criacao, pares)
     if "parametros_extras" in enviados:
         criacao.parametros_extras = dados.parametros_extras
     return repositorio.salvar(banco, criacao)
@@ -111,6 +128,7 @@ def gerar(banco: Session, sessao_id: str, criacao_id: str) -> Criacao:
     campos = validacao.validar(
         banco,
         validacao.Config(
+            sessao_id=sessao_id,
             tipo=criacao.tipo,
             modelo=criacao.modelo,
             prompt=criacao.prompt,
@@ -118,13 +136,14 @@ def gerar(banco: Session, sessao_id: str, criacao_id: str) -> Criacao:
             proporcao=criacao.proporcao,
             duracao=criacao.duracao_segundos,
             resolucao=criacao.resolucao,
-            referencias=[],
+            referencias=criacao.referencias,
             explicitos={"proporcao", "resolucao", "duracao"},
             extras=criacao.parametros_extras,
         ),
     )
 
     # Troca rascunho → gerando numa operação só: dois cliques seguidos não geram duas vezes.
+    campos.pop("referencias")
     momento = agora()
     estimativa_segundos = estimativa.estimar(
         banco, campos["modelo"], campos["tipo"], campos["duracao_segundos"], campos["resolucao"]

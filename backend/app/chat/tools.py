@@ -33,6 +33,22 @@ _CAMPOS_CRIACAO = {
     "duracao": {"type": "integer", "description": "Segundos. Obrigatória para vídeo; use um valor aceito pelo modelo."},
     "resolucao": {"type": "string", "description": "Opcional. Uma das resoluções aceitas pelo modelo."},
     "gerar_audio": {"type": "boolean", "description": "Só para vídeo, e só se o modelo gera áudio."},
+    "referencias": {
+        "type": "array",
+        "description": (
+            "Imagens de referência da sessão (veja referencia_id no resumo da sessão). "
+            "papel: 'referencia' (estilo/conteúdo, imagem ou vídeo), 'primeiro_quadro' ou 'ultimo_quadro' "
+            "(só vídeo, e só se o modelo aceita). Em ajustar_criacao, a lista enviada substitui a anterior."
+        ),
+        "items": {
+            "type": "object",
+            "properties": {
+                "referencia_id": {"type": "string"},
+                "papel": {"type": "string", "enum": ["referencia", "primeiro_quadro", "ultimo_quadro"]},
+            },
+            "required": ["referencia_id", "papel"],
+        },
+    },
 }
 
 DEFINICOES = [
@@ -110,6 +126,7 @@ def resumo_criacao(criacao: Criacao) -> dict:
         "duracao": criacao.duracao_segundos,
         "resolucao": criacao.resolucao,
         "versao": criacao.numero_versao,
+        "referencias": [{"referencia_id": r.referencia_id, "papel": r.papel} for r in criacao.referencias],
         "prompt": criacao.prompt if len(criacao.prompt) <= 300 else criacao.prompt[:300] + "…",
     }
 
@@ -148,8 +165,12 @@ def _listar_modelos(argumentos: dict) -> tuple[str, None]:
         if tipo == "video":
             item["duracoes"] = sorted(capacidades.get("duracoes") or [])
             item["gera_audio"] = capacidades.get("gera_audio")
-        elif capacidades.get("min_referencias"):
-            item["exige_referencia"] = True  # ainda não suportado: não escolha
+            item["aceita_primeiro_quadro"] = capacidades.get("aceita_primeiro_quadro")
+            item["aceita_ultimo_quadro"] = capacidades.get("aceita_ultimo_quadro")
+        else:
+            item["max_referencias"] = capacidades.get("max_referencias")
+            if capacidades.get("min_referencias"):
+                item["exige_referencia"] = True
         lista.append(item)
     return _json({"modelos": lista, "total": len(modelos)}), None
 
@@ -158,6 +179,12 @@ def _campos(argumentos: dict) -> dict:
     campos = {k: argumentos[k] for k in ("tipo", "modelo", "prompt", "orientacao", "proporcao", "duracao", "resolucao") if k in argumentos}
     if "gerar_audio" in argumentos:
         campos["parametros_extras"] = {"generate_audio": bool(argumentos["gerar_audio"])}
+    if "referencias" in argumentos:
+        campos["referencias"] = [
+            {"id": r.get("referencia_id"), "papel": r.get("papel", "referencia")}
+            for r in argumentos["referencias"] or []
+            if isinstance(r, dict)
+        ]
     return campos
 
 

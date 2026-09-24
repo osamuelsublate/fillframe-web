@@ -9,6 +9,25 @@ from app.brolls.modelos import Broll
 from app.db import Base, DataHoraUTC, agora
 
 SITUACOES = ("rascunho", "gerando", "pronto", "falhou", "apagado")
+PAPEIS = ("referencia", "primeiro_quadro", "ultimo_quadro")
+
+
+class CriacaoReferencia(Base):
+    """Referência usada numa criação, com o papel que ela cumpre."""
+
+    __tablename__ = "criacao_referencias"
+
+    criacao_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("criacoes.id", ondelete="CASCADE"), primary_key=True
+    )
+    referencia_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("referencias.id", ondelete="RESTRICT"), primary_key=True, index=True
+    )
+    papel: Mapped[str] = mapped_column(String(20), primary_key=True)  # referencia / primeiro_quadro / ultimo_quadro
+
+    @property
+    def id(self) -> str:
+        return self.referencia_id
 
 
 class Criacao(Base):
@@ -39,6 +58,11 @@ class Criacao(Base):
 
     brolls: Mapped[list[Broll]] = relationship(
         order_by=Broll.indice,
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    referencias: Mapped[list[CriacaoReferencia]] = relationship(
         lazy="selectin",
         cascade="all, delete-orphan",
         passive_deletes=True,

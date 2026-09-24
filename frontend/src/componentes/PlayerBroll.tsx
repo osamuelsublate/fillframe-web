@@ -2,10 +2,12 @@ import type { Broll } from '../api/criacoes'
 
 type Props = {
   broll: Broll
+  aoUsarComoReferencia?: () => void
+  usandoComoReferencia?: boolean
 }
 
 // Mostra o broll pronto (imagem ou vídeo) com o botão de baixar.
-export default function PlayerBroll({ broll }: Props) {
+export default function PlayerBroll({ broll, aoUsarComoReferencia, usandoComoReferencia = false }: Props) {
   const ehVideo = broll.formato.startsWith('video/')
 
   return (
@@ -32,13 +34,26 @@ export default function PlayerBroll({ broll }: Props) {
           {broll.duracao_segundos ? `${broll.duracao_segundos.toLocaleString('pt-BR')} s · ` : ''}
           {(broll.tamanho_bytes / 1024 / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MB
         </span>
-        <a
-          href={`${broll.url}?download=1`}
-          download
-          className="rounded-md border border-stone-300 px-2.5 py-1 font-medium text-stone-700 hover:bg-stone-50"
-        >
-          Baixar
-        </a>
+        <span className="flex gap-1.5">
+          {!ehVideo && aoUsarComoReferencia && (
+            <button
+              type="button"
+              onClick={aoUsarComoReferencia}
+              disabled={usandoComoReferencia}
+              title="Cria um vídeo que começa nesta imagem"
+              className="rounded-md border border-stone-300 px-2.5 py-1 font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60"
+            >
+              {usandoComoReferencia ? 'Preparando…' : 'Usar como referência'}
+            </button>
+          )}
+          <a
+            href={`${broll.url}?download=1`}
+            download
+            className="rounded-md border border-stone-300 px-2.5 py-1 font-medium text-stone-700 hover:bg-stone-50"
+          >
+            Baixar
+          </a>
+        </span>
       </div>
     </div>
   )

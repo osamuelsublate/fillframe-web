@@ -61,7 +61,7 @@ fillframe-web/
 ### LLM e transcrição
 
 - **LLM do chat:** via OpenRouter (chat completions com tool calling). As LLMs permitidas ficam configuradas no `.env`: `anthropic/claude-opus-5.5` como padrão e o modelo MiniMax mais recente, resolvido pelo catálogo como o modelo de texto mais novo da `minimax` com suporte a tools. Os ids exatos são confirmados no catálogo quando o app inicia.
-- **Áudio:** se a LLM da sessão aceita áudio como entrada (o catálogo da OpenRouter informa `input_modalities`), o áudio vai direto para ela. Se não aceita, o backend transcreve primeiro com um modelo da OpenRouter que aceite áudio (configurável em `.env`) e manda o texto. A transcrição fica salva na mensagem. **Por quê:** funciona com qualquer LLM escolhida e usa uma chave só.
+- **Áudio:** se a LLM da sessão aceita áudio como entrada (o catálogo da OpenRouter informa `input_modalities`), o áudio vai direto para ela. Se não aceita, o backend transcreve primeiro com um modelo da OpenRouter que aceite áudio (configurável em `.env` em `FILLFRAME_MODELO_TRANSCRICAO`) e manda o texto. Sem modelo configurado, usa o Gemini Flash Lite mais novo do catálogo (*assumido*: rápido, barato e testado com o áudio WebM que o navegador grava; o Gemini Flash comum às vezes corta a transcrição por filtro). A transcrição fica salva na mensagem. **Por quê:** funciona com qualquer LLM escolhida e usa uma chave só.
 
 ## 3. Autenticação e autorização
 

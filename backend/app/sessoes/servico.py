@@ -7,6 +7,7 @@ from app.chat import llms
 from app.chat import servico as servico_chat
 from app.config import obter_config
 from app.criacoes import repositorio as repositorio_criacoes
+from app.referencias import repositorio as repositorio_referencias
 from app.db import agora
 from app.sessoes import repositorio
 from app.sessoes.esquemas import SessaoAlterar, SessaoCompleta, SessaoCriar
@@ -28,13 +29,14 @@ def _buscar(banco: Session, sessao_id: str) -> Sessao:
 
 def abrir(banco: Session, sessao_id: str) -> SessaoCompleta:
     sessao = _buscar(banco, sessao_id)
-    resumo = SessaoCompleta.model_validate(sessao).model_dump(exclude={"mensagens", "criacoes"})
+    resumo = SessaoCompleta.model_validate(sessao).model_dump(exclude={"mensagens", "criacoes", "referencias"})
     # Tudo passa pela validação, para cada item sair no formato da API.
     return SessaoCompleta.model_validate(
         {
             **resumo,
             "mensagens": servico_chat.listar_mensagens(banco, sessao_id),
             "criacoes": repositorio_criacoes.listar(banco, sessao_id),
+            "referencias": repositorio_referencias.listar(banco, sessao_id),
         },
         from_attributes=True,
     )

@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.chat.esquemas import MensagemSaida
 from app.criacoes.esquemas import CriacaoSaida
+from app.referencias.esquemas import ReferenciaSaida
 
 
 class SessaoCriar(BaseModel):
@@ -29,4 +30,4 @@ class SessaoCompleta(SessaoResumo):
     criada_em: datetime
     mensagens: list[MensagemSaida] = []
     criacoes: list[CriacaoSaida] = []
-    # Referências entram aqui na fase 4.
+    referencias: list[ReferenciaSaida] = []

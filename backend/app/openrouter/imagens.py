@@ -30,12 +30,16 @@ async def gerar_imagens(
     proporcao: str | None = None,
     resolucao: str | None = None,
     extras: dict | None = None,
+    referencias: list[str] | None = None,
 ) -> ResultadoImagens:
+    """`referencias`: imagens de referência como data URL (base64)."""
     corpo: dict = {"model": modelo, "prompt": prompt, "n": 1}
     if proporcao:
         corpo["aspect_ratio"] = proporcao
     if resolucao:
         corpo["resolution"] = resolucao
+    if referencias:
+        corpo["input_references"] = [{"type": "image_url", "image_url": {"url": url}} for url in referencias]
     for chave, valor in (extras or {}).items():
         corpo.setdefault(chave, valor)
 

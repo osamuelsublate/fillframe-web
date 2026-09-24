@@ -20,6 +20,7 @@ from app.geracao import executor
 from app.modelos import servico as servico_modelos
 from app.modelos.rotas import rotas as rotas_modelos
 from app.openrouter.cliente import fechar_cliente
+from app.referencias.rotas import rotas as rotas_referencias
 from app.sessoes.rotas import rotas as rotas_sessoes
 from app.sistema.rotas import rotas as rotas_sistema
 
@@ -97,6 +98,7 @@ app.include_router(rotas_modelos)
 app.include_router(rotas_chat)
 app.include_router(rotas_criacoes)
 app.include_router(rotas_brolls)
+app.include_router(rotas_referencias)
 
 
 def rodar() -> None:

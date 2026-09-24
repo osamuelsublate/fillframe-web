@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pedir } from './cliente'
 import type { Criacao } from './criacoes'
+import type { Referencia } from './referencias'
 
 export type SessaoResumo = {
   id: string
@@ -13,6 +14,7 @@ export type Mensagem = {
   id: string
   autor: 'usuario' | 'llm' | 'tool'
   texto: string | null
+  audio_referencia_id: string | null
   transcricao: string | null
   chamadas_de_tool: ChamadaTool[] | null
   criada_em: string
@@ -31,6 +33,7 @@ export type SessaoCompleta = SessaoResumo & {
   criada_em: string
   mensagens: Mensagem[]
   criacoes: Criacao[]
+  referencias: Referencia[]
 }
 
 export function useSessoes() {

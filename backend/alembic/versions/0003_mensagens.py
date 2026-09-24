@@ -26,7 +26,7 @@ def upgrade() -> None:
         ),
         sa.Column("autor", sa.String(10), nullable=False),
         sa.Column("texto", sa.Text(), nullable=True),
-        # A tabela de referências chega na fase 4; a ligação (chave estrangeira) entra lá.
+        # Sem chave estrangeira: recriar a tabela no SQLite desligaria os anexos. O serviço valida o áudio.
         sa.Column("audio_referencia_id", sa.String(32), nullable=True),
         sa.Column("transcricao", sa.Text(), nullable=True),
         sa.Column("chamadas_de_tool", sa.JSON(), nullable=True),

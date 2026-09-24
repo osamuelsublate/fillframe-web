@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.erros import ErroDeCampo
 from app.modelos import servico as servico_modelos
 from app.modelos.modelos import ModeloCatalogo
+from app.referencias import repositorio as repositorio_referencias
 
 NOMES_TIPO = {"imagem": "imagem", "video": "vídeo"}
 PROPORCAO_PREFERIDA = {"vertical": "9:16", "horizontal": "16:9"}
@@ -20,6 +21,7 @@ PROPORCAO_PREFERIDA = {"vertical": "9:16", "horizontal": "16:9"}
 class Config:
     """Configuração de uma criação. `explicitos` diz quais campos a pessoa mandou nesta chamada."""
 
+    sessao_id: str
     tipo: str
     modelo: str
     prompt: str
@@ -27,7 +29,7 @@ class Config:
     proporcao: str | None
     duracao: int | None
     resolucao: str | None
-    referencias: list
+    referencias: list  # [ReferenciaUsada] ou objetos com .id e .papel
     explicitos: set[str]
     extras: dict | None = None
 
@@ -146,24 +148,57 @@ def _extras(config: Config, modelo: ModeloCatalogo) -> None:
         raise ErroDeCampo(f"O modelo {_nome(modelo)} não gera áudio.", "audio")
 
 
+NOMES_PAPEL = {"referencia": "referência", "primeiro_quadro": "primeiro quadro", "ultimo_quadro": "último quadro"}
+
+
+def _referencias(banco: Session, config: Config, modelo: ModeloCatalogo) -> list[tuple[str, str]]:
+    """Referências da criação: da mesma sessão, só imagens, e com papéis que o modelo aceita."""
+    pares = list(dict.fromkeys((r.id, r.papel) for r in config.referencias))
+    nome = _nome(modelo)
+    capacidades = modelo.capacidades
+
+    ids = list(dict.fromkeys(i for i, _ in pares))
+    encontradas = {r.id: r for r in repositorio_referencias.buscar_varias(banco, config.sessao_id, ids)}
+    for referencia_id in ids:
+        if referencia_id not in encontradas:
+            raise ErroDeCampo("Uma das referências não pertence a esta sessão.", "referencias")
+        if encontradas[referencia_id].tipo != "imagem":
+            raise ErroDeCampo("Só imagens podem ser usadas como referência numa criação.", "referencias")
+
+    for papel in ("primeiro_quadro", "ultimo_quadro"):
+        quantos = sum(1 for _, p in pares if p == papel)
+        if quantos and config.tipo != "video":
+            raise ErroDeCampo(f"Imagem não tem {NOMES_PAPEL[papel]}: isso só existe em vídeo.", "referencias")
+        if quantos and not capacidades.get("aceita_" + papel):
+            raise ErroDeCampo(f"O modelo {nome} não aceita {NOMES_PAPEL[papel]}.", "referencias")
+        if quantos > 1:
+            raise ErroDeCampo(f"Escolha só uma imagem como {NOMES_PAPEL[papel]}.", "referencias")
+
+    estilo = sum(1 for _, p in pares if p == "referencia")
+    # Em vídeo, a OpenRouter diz que referências de imagem funcionam em todos os provedores.
+    aceita = capacidades.get("aceita_referencia")
+    if estilo and aceita is False:
+        raise ErroDeCampo(f"O modelo {nome} não aceita imagens de referência.", "referencias")
+    maximo = capacidades.get("max_referencias")
+    if maximo and estilo > maximo:
+        raise ErroDeCampo(f"O modelo {nome} aceita no máximo {maximo} imagens de referência.", "referencias")
+    minimo = capacidades.get("min_referencias") or 0
+    if estilo < minimo:
+        raise ErroDeCampo(
+            f"O modelo {nome} precisa de pelo menos {minimo} imagem de referência. "
+            "Anexe uma imagem no chat e escolha-a em Referências.",
+            "referencias",
+        )
+    return pares
+
+
 def validar(banco: Session, config: Config) -> dict:
-    """Devolve os campos prontos para salvar, ou levanta ErroDeCampo."""
+    """Devolve os campos prontos para salvar (+ "referencias"), ou levanta ErroDeCampo."""
     prompt = (config.prompt or "").strip()
     if not prompt:
         raise ErroDeCampo("O prompt é obrigatório.", "prompt")
 
     modelo = _buscar_modelo(banco, config.tipo, config.modelo)
-
-    minimo = modelo.capacidades.get("min_referencias") or 0
-    if minimo > 0:
-        raise ErroDeCampo(
-            f"O modelo {_nome(modelo)} precisa de pelo menos {minimo} imagem de referência, "
-            "e o envio de referências ainda não está disponível. Escolha outro modelo.",
-            "modelo",
-        )
-    if config.referencias:
-        raise ErroDeCampo("O uso de referências ainda não está disponível.", "referencias")
-
     _extras(config, modelo)
 
     return {
@@ -174,4 +209,6 @@ def validar(banco: Session, config: Config) -> dict:
         "proporcao": _proporcao(config, modelo),
         "duracao_segundos": _duracao(config, modelo),
         "resolucao": _resolucao(config, modelo),
+        # Não é coluna da criação: o serviço grava à parte, como [(referencia_id, papel)].
+        "referencias": _referencias(banco, config, modelo),
     }

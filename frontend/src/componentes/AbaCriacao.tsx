@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { useGerarCriacao, type Criacao, type Situacao } from '../api/criacoes'
+import { useGerarCriacao, type Broll, type Criacao, type Situacao } from '../api/criacoes'
 import type { SessaoCompleta } from '../api/sessoes'
-import ConfigCriacao from './ConfigCriacao'
+import { useReferenciaDeBroll } from '../api/referencias'
+import ConfigCriacao, { type InicioCriacao } from './ConfigCriacao'
 import type { Destaque } from './Painel'
 import PlayerBroll from './PlayerBroll'
 import ProgressoCriacao from './ProgressoCriacao'
@@ -31,6 +32,8 @@ type Props = {
 export default function AbaCriacao({ sessao, destaque }: Props) {
   // null: lista; 'nova': criação nova; id: editando esse rascunho.
   const [editando, setEditando] = useState<string | null>(null)
+  const [inicio, setInicio] = useState<InicioCriacao | null>(null)
+  const deBroll = useReferenciaDeBroll(sessao.id)
   const [vezVista, setVezVista] = useState(destaque?.vez)
   const lista = useRef<HTMLDivElement>(null)
 
@@ -47,6 +50,21 @@ export default function AbaCriacao({ sessao, destaque }: Props) {
     lista.current?.querySelector(`[data-criacao="${destacadaId}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [destacadaId, destaque?.vez, sessao.criacoes.length])
 
+  // "Usar como referência": a imagem vira referência e abre um vídeo novo que começa nela,
+  // na mesma orientação da imagem (senão o vídeo sai com faixas pretas).
+  function usarComoReferencia(broll: Broll) {
+    deBroll.mutate(broll.id, {
+      onSuccess: (referencia) => {
+        setInicio({
+          tipo: 'video',
+          orientacao: (broll.largura ?? 0) > (broll.altura ?? 0) ? 'horizontal' : 'vertical',
+          referencias: [{ id: referencia.id, papel: 'primeiro_quadro' }],
+        })
+        setEditando('nova')
+      },
+    })
+  }
+
   if (editando) {
     const criacao = sessao.criacoes.find((c) => c.id === editando) ?? null
     return (
@@ -54,7 +72,12 @@ export default function AbaCriacao({ sessao, destaque }: Props) {
         key={editando}
         sessaoId={sessao.id}
         criacao={criacao}
-        aoFechar={() => setEditando(null)}
+        inicio={editando === 'nova' ? inicio : null}
+        referenciasDaSessao={sessao.referencias}
+        aoFechar={() => {
+          setEditando(null)
+          setInicio(null)
+        }}
       />
     )
   }
@@ -64,7 +87,10 @@ export default function AbaCriacao({ sessao, destaque }: Props) {
       <div className="border-b border-stone-200 p-3">
         <button
           type="button"
-          onClick={() => setEditando('nova')}
+          onClick={() => {
+            setInicio(null)
+            setEditando('nova')
+          }}
           className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium hover:bg-stone-50"
         >
           + Nova criação
@@ -72,6 +98,7 @@ export default function AbaCriacao({ sessao, destaque }: Props) {
       </div>
 
       <div ref={lista} className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
+        <ReferenciasDaSessao sessao={sessao} />
         {sessao.criacoes.length === 0 && (
           <p className="py-6 text-center text-sm text-stone-500">
             Nenhuma criação nesta sessão ainda.
@@ -84,6 +111,8 @@ export default function AbaCriacao({ sessao, destaque }: Props) {
             criacao={criacao}
             destacada={criacao.id === destacadaId}
             aoEditar={() => setEditando(criacao.id)}
+            aoUsarComoReferencia={usarComoReferencia}
+            brollVirandoReferencia={deBroll.isPending ? deBroll.variables : null}
           />
         ))}
       </div>
@@ -91,14 +120,34 @@ export default function AbaCriacao({ sessao, destaque }: Props) {
   )
 }
 
+// "começa numa imagem · 2 referências de estilo"
+function textoReferencias(criacao: Criacao): string {
+  const partes: string[] = []
+  if (criacao.referencias.some((r) => r.papel === 'primeiro_quadro')) partes.push('começa numa imagem')
+  if (criacao.referencias.some((r) => r.papel === 'ultimo_quadro')) partes.push('termina numa imagem')
+  const estilo = criacao.referencias.filter((r) => r.papel === 'referencia').length
+  if (estilo === 1) partes.push('1 referência de estilo')
+  if (estilo > 1) partes.push(`${estilo} referências de estilo`)
+  return partes.join(' · ')
+}
+
 type PropsCartao = {
   sessaoId: string
   criacao: Criacao
   destacada: boolean
   aoEditar: () => void
+  aoUsarComoReferencia: (broll: Broll) => void
+  brollVirandoReferencia: string | null
 }
 
-function CartaoCriacao({ sessaoId, criacao, destacada, aoEditar }: PropsCartao) {
+function CartaoCriacao({
+  sessaoId,
+  criacao,
+  destacada,
+  aoEditar,
+  aoUsarComoReferencia,
+  brollVirandoReferencia,
+}: PropsCartao) {
   const gerar = useGerarCriacao(sessaoId)
   const rascunho = criacao.situacao === 'rascunho'
   const detalhes = [
@@ -118,6 +167,9 @@ function CartaoCriacao({ sessaoId, criacao, destacada, aoEditar }: PropsCartao) 
       </div>
       <p className="mt-1 line-clamp-2 text-sm">{criacao.prompt}</p>
       <p className="mt-1.5 text-xs text-stone-500">{detalhes.join(' · ')}</p>
+      {criacao.referencias.length > 0 && (
+        <p className="mt-1 text-xs text-stone-500">{textoReferencias(criacao)}</p>
+      )}
     </>
   )
 
@@ -170,7 +222,12 @@ function CartaoCriacao({ sessaoId, criacao, destacada, aoEditar }: PropsCartao) 
         <div className="mt-3 space-y-3">
           <ProgressoCriacao iniciadaEm={criacao.iniciada_em} estimativaSegundos={criacao.estimativa_segundos} pronto />
           {criacao.brolls.map((broll) => (
-            <PlayerBroll key={broll.id} broll={broll} />
+            <PlayerBroll
+              key={broll.id}
+              broll={broll}
+              aoUsarComoReferencia={() => aoUsarComoReferencia(broll)}
+              usandoComoReferencia={brollVirandoReferencia === broll.id}
+            />
           ))}
           <p className="text-xs text-stone-500">
             {[
@@ -187,5 +244,32 @@ function CartaoCriacao({ sessaoId, criacao, destacada, aoEditar }: PropsCartao) 
         </div>
       )}
     </div>
+  )
+}
+
+function ReferenciasDaSessao({ sessao }: { sessao: SessaoCompleta }) {
+  const imagens = sessao.referencias.filter((r) => r.tipo === 'imagem')
+  if (imagens.length === 0) return null
+  return (
+    <section className="pb-2">
+      <h3 className="mb-1.5 text-xs font-medium tracking-wide text-stone-500 uppercase">Referências da sessão</h3>
+      <div className="flex flex-wrap gap-1.5">
+        {imagens.map((referencia) => (
+          <a
+            key={referencia.id}
+            href={referencia.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={referencia.nome_original ?? 'Imagem de referência'}
+          >
+            <img
+              src={referencia.url}
+              alt={referencia.nome_original ?? 'Imagem de referência'}
+              className="h-16 w-16 rounded-lg border border-stone-200 object-cover hover:border-stone-500"
+            />
+          </a>
+        ))}
+      </div>
+    </section>
   )
 }

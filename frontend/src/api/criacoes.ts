@@ -18,6 +18,10 @@ export type Broll = {
   url_miniatura: string
 }
 
+export type Papel = 'referencia' | 'primeiro_quadro' | 'ultimo_quadro'
+
+export type ReferenciaUsada = { id: string; papel: Papel }
+
 export type Criacao = {
   id: string
   sessao_id: string
@@ -41,6 +45,7 @@ export type Criacao = {
   custo_usd: number | null
   criada_em: string
   brolls: Broll[]
+  referencias: ReferenciaUsada[]
 }
 
 export type ConfigCriacao = {
@@ -51,6 +56,7 @@ export type ConfigCriacao = {
   resolucao: string | null
   duracao: number | null
   parametros_extras: Record<string, unknown> | null
+  referencias: ReferenciaUsada[]
 }
 
 // Cria um rascunho novo (sem id) ou altera um rascunho existente (com id).
