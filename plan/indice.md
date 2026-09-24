@@ -1,9 +1,9 @@
 # Plano de construção: FillFrame
 
 ## Onde estamos
-Fase ativa: 5
-Onda ativa: 5.1
-Última onda concluída: 4.3
+Fase ativa: 6
+Onda ativa: 6.1
+Última onda concluída: 5.4
 Atualizado em: 2026-09-24
 
 ## Fases
@@ -13,8 +13,8 @@ Atualizado em: 2026-09-24
 | 2 | Conexão com a OpenRouter | Ver todos os modelos de imagem e vídeo com preço e capacidades, e conversar com a LLM (Opus 5.5 ou MiniMax) | concluída | 2.1, 2.2 |
 | 3 | Gerar brolls | Pedir brolls no chat, a LLM preparar, você gerar imagens e vídeos (vertical ou horizontal) com contador e barra de progresso, assistir e baixar | concluída | 3.1, 3.2, 3.3, 3.4, 3.5 |
 | 4 | Referências e áudio | Anexar imagens, textos e áudio no chat, usar referências nas criações e transformar uma imagem gerada em vídeo | concluída | 4.1, 4.2, 4.3 |
-| 5 | Versões, galeria e organização | Criar e navegar entre versões, usar a Galeria, renomear e apagar sessões, criações e referências | em andamento | 5.1, 5.2, 5.3, 5.4 |
-| 6 | Fechamento | Usar no dia a dia com mensagens de erro claras, tela revisada e segurança conferida | pendente | 6.1, 6.2 |
+| 5 | Versões, galeria e organização | Criar e navegar entre versões, usar a Galeria, renomear e apagar sessões, criações e referências | concluída | 5.1, 5.2, 5.3, 5.4 |
+| 6 | Fechamento | Usar no dia a dia com mensagens de erro claras, tela revisada e segurança conferida | em andamento | 6.1, 6.2 |
 
 Total: 6 fases, 18 ondas.
 

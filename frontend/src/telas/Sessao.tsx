@@ -3,7 +3,7 @@ import { ErroApi } from '../api/cliente'
 import { useCriarSessao, useSessao, useSessoes, type SessaoCompleta } from '../api/sessoes'
 import { useStatus } from '../api/sistema'
 import AvisoChave from '../componentes/AvisoChave'
-import Chat, { SeletorLlm } from '../componentes/Chat'
+import Chat, { SeletorLlm, type AnexoExterno } from '../componentes/Chat'
 import HistoricoSessoes from '../componentes/HistoricoSessoes'
 import { IconeLateral, IconePainel } from '../componentes/Icones'
 import Painel, { type Destaque } from '../componentes/Painel'
@@ -18,6 +18,8 @@ export default function Sessao() {
   const [painelAberto, setPainelAberto] = useState(true)
   // Criação em destaque no painel (quando a LLM prepara um rascunho ou a pessoa clica em "revisar").
   const [destaque, setDestaque] = useState<Destaque | null>(null)
+  // Imagem que a Galeria mandou para a caixa do chat (`vez` muda a cada envio).
+  const [anexoExterno, setAnexoExterno] = useState<AnexoExterno | null>(null)
   const [sessaoId, setSessaoId] = useState<string | null>(sessaoDaUrl)
   const [aviso, setAviso] = useState<string | null>(null)
   const criandoPrimeira = useRef(false)
@@ -88,6 +90,8 @@ export default function Sessao() {
             criando={criarSessao.isPending}
             aoAbrir={(id) => id !== sessaoId && abrir(id)}
             aoCriar={novaSessao}
+            // Apagou a sessão aberta: vai para a próxima do histórico (ou cria uma nova).
+            aoApagar={(id) => id === sessaoId && abrir(null, true)}
           />
         </aside>
       )}
@@ -124,6 +128,7 @@ export default function Sessao() {
         <div className="min-h-0 flex-1">
           <AreaChat
             sessao={sessao.data}
+            anexoExterno={anexoExterno}
             aoRevisarCriacao={(criacaoId, editar) => {
               setPainelAberto(true)
               setDestaque((atual) => ({ criacaoId, editar, vez: (atual?.vez ?? 0) + 1 }))
@@ -136,6 +141,9 @@ export default function Sessao() {
         <Painel
           sessao={sessao.data}
           destaque={destaque}
+          aoMandarParaChat={(referencia) =>
+            setAnexoExterno((atual) => ({ referencia, vez: (atual?.vez ?? 0) + 1 }))
+          }
           cabecalho={
             <BotaoIcone titulo="Fechar painel" aoClicar={() => setPainelAberto(false)}>
               <IconePainel className="h-5 w-5" />
@@ -149,10 +157,11 @@ export default function Sessao() {
 
 type PropsAreaChat = {
   sessao: SessaoCompleta | undefined
+  anexoExterno: AnexoExterno | null
   aoRevisarCriacao: (criacaoId: string, editar: boolean) => void
 }
 
-function AreaChat({ sessao, aoRevisarCriacao }: PropsAreaChat) {
+function AreaChat({ sessao, anexoExterno, aoRevisarCriacao }: PropsAreaChat) {
   const status = useStatus()
 
   if (status.isPending) {
@@ -177,7 +186,9 @@ function AreaChat({ sessao, aoRevisarCriacao }: PropsAreaChat) {
   }
 
   // key: ao trocar de sessão, o chat começa do zero (rascunho e resposta em andamento).
-  return <Chat key={sessao.id} sessao={sessao} aoRevisarCriacao={aoRevisarCriacao} />
+  return (
+    <Chat key={sessao.id} sessao={sessao} anexoExterno={anexoExterno} aoRevisarCriacao={aoRevisarCriacao} />
+  )
 }
 
 type PropsBotaoIcone = {

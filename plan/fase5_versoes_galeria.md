@@ -4,7 +4,7 @@ Objetivo: pedir ajustes criando novas versões e voltar a qualquer versão anter
 Depende de: Fase 4
 
 ## Onda 5.1: Versões de um broll
-Status: pendente
+Status: concluída (2026-09-24)
 Objetivo: criar uma nova versão a partir de qualquer versão de uma criação (pelo painel ou pedindo à LLM), e navegar entre v1, v2, v3… para consultar.
 Depende de: 3.4
 Ler antes: spec/dados.md (entidade Criação: `versao_de_id`, `raiz_id`, `numero_versao`; "Histórico"); spec/arquitetura.md (tabela "Criações": "Nova versão" e "Versões"); spec/telas.md ("Aba Criação", seletor de versões; "Fluxo de uso diário" passo 6)
@@ -30,7 +30,7 @@ Teste da pessoa:
 4. Tente editar a configuração da v1 já pronta: os campos ficam travados, com o aviso "Versões prontas não mudam. Crie uma nova versão."
 
 ## Onda 5.2: Galeria
-Status: pendente
+Status: concluída (2026-09-24)
 Objetivo: ver todos os brolls da sessão (ou de todas as sessões) com filtros, baixar e mandar de volta para o chat como referência.
 Depende de: 4.2
 Ler antes: spec/telas.md ("Aba Galeria"); spec/arquitetura.md (tabela "Brolls e galeria": "Galeria")
@@ -55,7 +55,7 @@ Teste da pessoa:
 5. Filtre algo que não existe (ex.: Vídeo + Horizontal numa sessão sem vídeo horizontal): deve aparecer "Nenhum broll com esses filtros".
 
 ## Onda 5.3: Renomear e apagar sessões
-Status: pendente
+Status: concluída (2026-09-24)
 Objetivo: renomear sessões e apagar uma sessão inteira (com confirmação), incluindo os arquivos dela.
 Depende de: 3.3
 Ler antes: spec/telas.md ("Histórico de sessões", regra "Apagar"); spec/dados.md ("Exclusão lógica ou física": Sessão); spec/arquitetura.md (tabela "Sessões": "Apagar sessão")
@@ -79,7 +79,7 @@ Teste da pessoa:
 4. Tente renomear com o nome vazio: deve aparecer "O nome não pode ficar vazio" e o nome anterior volta.
 
 ## Onda 5.4: Apagar criações e referências
-Status: pendente
+Status: concluída (2026-09-24)
 Objetivo: apagar uma criação (preservando a árvore de versões quando há versões derivadas) e remover referências não usadas.
 Depende de: 5.1, 4.2
 Ler antes: spec/dados.md ("Exclusão lógica ou física": Criação e Referência); spec/arquitetura.md (tabela "Criações": "Apagar criação"; tabela "Referências": "Apagar referência"); spec/telas.md (regra "Apagar")

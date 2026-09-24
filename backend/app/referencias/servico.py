@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.arquivos import upload
-from app.arquivos.armazenamento import CaminhoInvalido, caminho_seguro
+from app.arquivos.armazenamento import CaminhoInvalido, apagar_arquivos, caminho_seguro
 from app.brolls.modelos import Broll
 from app.criacoes.modelos import Criacao
 from app.db import PASTA_DADOS, agora
@@ -99,3 +99,19 @@ def de_broll(banco: Session, sessao_id: str, broll_id: str) -> Referencia:
             criada_em=agora(),
         ),
     )
+
+
+def apagar(banco: Session, sessao_id: str, referencia_id: str) -> None:
+    """Exclusão física, bloqueada se a referência foi usada numa criação (a versão precisa continuar
+    reproduzível) ou se é o áudio de uma mensagem da conversa."""
+    _sessao(banco, sessao_id)
+    encontradas = repositorio.buscar_varias(banco, sessao_id, [referencia_id])
+    if not encontradas:
+        raise HTTPException(status_code=404, detail="Referência não encontrada")
+    if repositorio.usada_em_criacao(banco, referencia_id):
+        raise HTTPException(status_code=409, detail="Esta referência foi usada em uma criação e não pode ser apagada")
+    if repositorio.audio_de_mensagem(banco, referencia_id):
+        raise HTTPException(status_code=409, detail="Este áudio faz parte da conversa e não pode ser apagado")
+    arquivo = encontradas[0].arquivo
+    repositorio.apagar(banco, referencia_id)
+    apagar_arquivos([arquivo])

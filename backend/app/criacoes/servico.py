@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.criacoes import estimativa, repositorio, validacao
 from app.criacoes.esquemas import CriacaoAlterar, CriacaoCriar
 from app.criacoes.modelos import SITUACOES, Criacao, CriacaoReferencia
+from app.arquivos.armazenamento import apagar_arquivos
 from app.db import agora
 from app.geracao import executor
 from app.sessoes import repositorio as repositorio_sessoes
@@ -83,32 +84,38 @@ def criar(banco: Session, sessao_id: str, dados: CriacaoCriar) -> Criacao:
     return repositorio.salvar(banco, criacao)
 
 
+def _validar_mudancas(banco: Session, sessao_id: str, base: Criacao, dados: CriacaoAlterar) -> dict:
+    """Configuração de `base` com as mudanças de `dados` aplicadas, já validada contra o modelo."""
+    enviados = dados.model_fields_set
+
+    def valor(campo: str, atual):
+        return getattr(dados, campo) if campo in enviados else atual
+
+    return validacao.validar(
+        banco,
+        validacao.Config(
+            sessao_id=sessao_id,
+            tipo=valor("tipo", base.tipo),
+            modelo=valor("modelo", base.modelo),
+            prompt=valor("prompt", base.prompt),
+            orientacao=valor("orientacao", base.orientacao),
+            proporcao=valor("proporcao", base.proporcao),
+            duracao=valor("duracao", base.duracao_segundos),
+            resolucao=valor("resolucao", base.resolucao),
+            referencias=valor("referencias", base.referencias) or [],
+            explicitos=enviados,
+            extras=valor("parametros_extras", base.parametros_extras),
+        ),
+    )
+
+
 def alterar(banco: Session, sessao_id: str, criacao_id: str, dados: CriacaoAlterar) -> Criacao:
     criacao = _criacao(banco, sessao_id, criacao_id)
     if criacao.situacao != "rascunho":
         raise HTTPException(status_code=409, detail="Só é possível editar um rascunho")
 
     enviados = dados.model_fields_set
-
-    def valor(campo: str, atual):
-        return getattr(dados, campo) if campo in enviados else atual
-
-    campos = validacao.validar(
-        banco,
-        validacao.Config(
-            sessao_id=sessao_id,
-            tipo=valor("tipo", criacao.tipo),
-            modelo=valor("modelo", criacao.modelo),
-            prompt=valor("prompt", criacao.prompt),
-            orientacao=valor("orientacao", criacao.orientacao),
-            proporcao=valor("proporcao", criacao.proporcao),
-            duracao=valor("duracao", criacao.duracao_segundos),
-            resolucao=valor("resolucao", criacao.resolucao),
-            referencias=valor("referencias", criacao.referencias) or [],
-            explicitos=enviados,
-            extras=valor("parametros_extras", criacao.parametros_extras),
-        ),
-    )
+    campos = _validar_mudancas(banco, sessao_id, criacao, dados)
     pares = campos.pop("referencias")
     for campo, novo in campos.items():
         setattr(criacao, campo, novo)
@@ -117,6 +124,42 @@ def alterar(banco: Session, sessao_id: str, criacao_id: str, dados: CriacaoAlter
     if "parametros_extras" in enviados:
         criacao.parametros_extras = dados.parametros_extras
     return repositorio.salvar(banco, criacao)
+
+
+def nova_versao(banco: Session, sessao_id: str, criacao_id: str, dados: CriacaoAlterar) -> Criacao:
+    """Cria um rascunho novo a partir de qualquer versão (menos as apagadas), com as mudanças pedidas.
+
+    A versão de origem nunca muda: a nova copia a configuração e as referências dela.
+    """
+    base = _criacao(banco, sessao_id, criacao_id)
+    if base.situacao == "apagado":
+        raise HTTPException(status_code=409, detail="Não é possível partir de uma versão apagada")
+
+    campos = _validar_mudancas(banco, sessao_id, base, dados)
+    pares = campos.pop("referencias")
+    extras = dados.parametros_extras if "parametros_extras" in dados.model_fields_set else base.parametros_extras
+
+    momento = agora()
+    nova = Criacao(
+        id=uuid4().hex,
+        sessao_id=sessao_id,
+        versao_de_id=base.id,
+        raiz_id=base.raiz_id,
+        numero_versao=repositorio.maior_versao(banco, sessao_id, base.raiz_id) + 1,
+        situacao="rascunho",
+        parametros_extras=dict(extras) if extras else None,
+        criada_em=momento,
+        **campos,
+    )
+    _ligar_referencias(nova, pares)
+    _sessao(banco, sessao_id).ultimo_uso_em = momento
+    return repositorio.salvar(banco, nova)
+
+
+def versoes(banco: Session, sessao_id: str, criacao_id: str) -> list[Criacao]:
+    """Todas as versões da árvore desta criação (v1, v2, v3…), em ordem."""
+    criacao = _criacao(banco, sessao_id, criacao_id)
+    return repositorio.versoes(banco, sessao_id, criacao.raiz_id)
 
 
 def gerar(banco: Session, sessao_id: str, criacao_id: str) -> Criacao:
@@ -165,3 +208,37 @@ def gerar(banco: Session, sessao_id: str, criacao_id: str) -> Criacao:
 
     executor.enfileirar(criacao_id)
     return criacao
+
+
+def apagar(banco: Session, sessao_id: str, criacao_id: str) -> None:
+    """Regra "Apagar" (spec/dados.md): com versões filhas, a exclusão é lógica (situação `apagado`,
+    arquivos removidos, registro mantido para a árvore); sem filhas, é física.
+
+    Se estiver gerando, o acompanhamento para (a OpenRouter não cancela; o resultado é descartado).
+    As referências geradas a partir destes brolls continuam valendo: têm cópia própria do arquivo.
+    """
+    criacao = _criacao(banco, sessao_id, criacao_id)
+    if criacao.situacao == "apagado":
+        raise HTTPException(status_code=409, detail="Esta versão já foi apagada")
+
+    executor.cancelar([criacao_id])
+    arquivos: list[str | None] = []
+    atual: Criacao | None = criacao
+    while atual is not None:
+        arquivos += repositorio.arquivos_dos_brolls(banco, atual.id)
+        if repositorio.tem_filhas(banco, atual.id):
+            repositorio.apagar_brolls(banco, atual.id)
+            banco.execute(
+                update(Criacao)
+                .where(Criacao.id == atual.id)
+                .values(situacao="apagado", erro=None, id_job_openrouter=None)
+            )
+            break
+        # Sem filhas: some de vez. Se a versão de onde partiu já estava apagada e ficou sem
+        # nenhuma filha, ela também sai (não sobra versão apagada sem motivo na árvore).
+        pai = banco.get(Criacao, atual.versao_de_id) if atual.versao_de_id else None
+        repositorio.apagar_fisicamente(banco, atual.id)
+        banco.flush()
+        atual = pai if pai is not None and pai.situacao == "apagado" else None
+    banco.commit()
+    apagar_arquivos(arquivos)

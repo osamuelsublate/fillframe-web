@@ -93,7 +93,7 @@ export function ListaAnexos({ anexos }: { anexos: Anexo[] }) {
 }
 
 type PropsAviso = {
-  acao: 'criacao_preparada' | 'criacao_ajustada'
+  acao: 'criacao_preparada' | 'criacao_ajustada' | 'versao_criada'
   prompt: string
   aoRevisar: () => void
 }
@@ -108,7 +108,11 @@ export function AvisoRascunho({ acao, prompt, aoRevisar }: PropsAviso) {
       className="flex w-full items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-left text-sm hover:border-stone-400"
     >
       <span className="shrink-0 font-medium">
-        {acao === 'criacao_preparada' ? 'Rascunho preparado:' : 'Rascunho ajustado:'}
+        {acao === 'criacao_preparada'
+          ? 'Rascunho preparado:'
+          : acao === 'versao_criada'
+            ? 'Nova versão preparada:'
+            : 'Rascunho ajustado:'}
       </span>
       <span className="min-w-0 flex-1 truncate text-stone-600">{resumo}</span>
       <span className="shrink-0 font-medium text-stone-900">→ revisar</span>

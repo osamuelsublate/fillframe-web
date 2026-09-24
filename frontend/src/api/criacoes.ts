@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { pedir } from './cliente'
+import { apagarNaApi, pedir } from './cliente'
 import type { TipoMidia } from './modelos'
+import type { SessaoCompleta } from './sessoes'
 
 export type Orientacao = 'vertical' | 'horizontal'
 export type Situacao = 'rascunho' | 'gerando' | 'pronto' | 'falhou' | 'apagado'
@@ -93,6 +94,38 @@ export function useGerarCriacao(sessaoId: string) {
     onSettled: () => {
       clienteQuery.invalidateQueries({ queryKey: ['sessoes', sessaoId] })
       clienteQuery.invalidateQueries({ queryKey: ['sessoes'], exact: true })
+    },
+  })
+}
+
+// Nova versão (rascunho) a partir de qualquer versão. A versão de origem nunca muda.
+export function useNovaVersao(sessaoId: string) {
+  const clienteQuery = useQueryClient()
+  return useMutation({
+    mutationFn: (criacaoId: string) =>
+      pedir<Criacao>(
+        `/sessoes/${encodeURIComponent(sessaoId)}/criacoes/${encodeURIComponent(criacaoId)}/versoes`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' },
+      ),
+    onSuccess: (nova) => {
+      // Já coloca a versão nova na sessão, para o editor abrir nela sem esperar a recarga.
+      clienteQuery.setQueryData<SessaoCompleta>(['sessoes', sessaoId], (atual) =>
+        atual ? { ...atual, criacoes: [nova, ...atual.criacoes] } : atual,
+      )
+      clienteQuery.invalidateQueries({ queryKey: ['sessoes', sessaoId] })
+    },
+  })
+}
+
+// Apaga uma criação (versão). Com versões derivadas, ela fica "apagada" na árvore; sem, some de vez.
+export function useApagarCriacao() {
+  const clienteQuery = useQueryClient()
+  return useMutation({
+    mutationFn: ({ sessaoId, criacaoId }: { sessaoId: string; criacaoId: string }) =>
+      apagarNaApi(`/sessoes/${encodeURIComponent(sessaoId)}/criacoes/${encodeURIComponent(criacaoId)}`),
+    onSuccess: (_, { sessaoId }) => {
+      clienteQuery.invalidateQueries({ queryKey: ['sessoes', sessaoId] })
+      clienteQuery.invalidateQueries({ queryKey: ['galeria'] })
     },
   })
 }

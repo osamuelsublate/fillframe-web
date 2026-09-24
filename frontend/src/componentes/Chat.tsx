@@ -38,8 +38,12 @@ function paraAnexo(referencia: Referencia): Anexo {
   }
 }
 
+// Imagem mandada de fora do chat (ex.: "Mandar para o chat" na Galeria).
+export type AnexoExterno = { referencia: Referencia; vez: number }
+
 type Props = {
   sessao: SessaoCompleta
+  anexoExterno?: AnexoExterno | null
   aoRevisarCriacao: (criacaoId: string, editar: boolean) => void
 }
 
@@ -49,12 +53,25 @@ function juntarTexto(partes: Parte[], pedaco: string): Parte[] {
   return [...partes, { tipo: 'texto', texto: pedaco }]
 }
 
-export default function Chat({ sessao, aoRevisarCriacao }: Props) {
+export default function Chat({ sessao, anexoExterno = null, aoRevisarCriacao }: Props) {
   const clienteQuery = useQueryClient()
   const [rascunho, setRascunho] = useState('')
   const [envio, setEnvio] = useState<Envio | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [anexos, setAnexos] = useState<AnexoLocal[]>([])
+  const [vezAnexoExterno, setVezAnexoExterno] = useState(anexoExterno?.vez)
+
+  // Anexo novo vindo da Galeria: entra na caixa de mensagem (sem repetir o mesmo arquivo).
+  if (anexoExterno && anexoExterno.vez !== vezAnexoExterno) {
+    setVezAnexoExterno(anexoExterno.vez)
+    const { referencia } = anexoExterno
+    if (!anexos.some((a) => a.referencia?.id === referencia.id)) {
+      setAnexos([
+        ...anexos,
+        { chave: `galeria-${referencia.id}`, nome: referencia.nome_original ?? 'imagem', estado: 'pronto', referencia },
+      ])
+    }
+  }
   const [arrastando, setArrastando] = useState(false)
   const [gravando, setGravando] = useState(false)
   const [subindoAudio, setSubindoAudio] = useState(false)

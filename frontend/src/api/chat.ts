@@ -16,7 +16,7 @@ export function useLlms() {
 }
 
 export type EventoTool = {
-  acao: 'criacao_preparada' | 'criacao_ajustada'
+  acao: 'criacao_preparada' | 'criacao_ajustada' | 'versao_criada'
   criacao_id: string
   prompt: string
 }

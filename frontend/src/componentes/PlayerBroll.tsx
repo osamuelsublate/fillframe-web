@@ -4,10 +4,18 @@ type Props = {
   broll: Broll
   aoUsarComoReferencia?: () => void
   usandoComoReferencia?: boolean
+  aoNovaVersao?: () => void
+  aoApagar?: () => void
 }
 
 // Mostra o broll pronto (imagem ou vídeo) com o botão de baixar.
-export default function PlayerBroll({ broll, aoUsarComoReferencia, usandoComoReferencia = false }: Props) {
+export default function PlayerBroll({
+  broll,
+  aoUsarComoReferencia,
+  usandoComoReferencia = false,
+  aoNovaVersao,
+  aoApagar,
+}: Props) {
   const ehVideo = broll.formato.startsWith('video/')
 
   return (
@@ -28,13 +36,23 @@ export default function PlayerBroll({ broll, aoUsarComoReferencia, usandoComoRef
           </a>
         )}
       </div>
-      <div className="flex items-center justify-between text-xs text-stone-500">
+      <div className="flex flex-wrap items-center justify-between gap-y-1.5 text-xs text-stone-500">
         <span>
           {broll.largura && broll.altura ? `${broll.largura}×${broll.altura} · ` : ''}
           {broll.duracao_segundos ? `${broll.duracao_segundos.toLocaleString('pt-BR')} s · ` : ''}
           {(broll.tamanho_bytes / 1024 / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MB
         </span>
-        <span className="flex gap-1.5">
+        <span className="flex flex-wrap gap-1.5">
+          {aoNovaVersao && (
+            <button
+              type="button"
+              onClick={aoNovaVersao}
+              title="Abre um rascunho novo com a mesma configuração, para você ajustar"
+              className="rounded-md border border-stone-300 px-2.5 py-1 font-medium text-stone-700 hover:bg-stone-50"
+            >
+              Nova versão a partir desta
+            </button>
+          )}
           {!ehVideo && aoUsarComoReferencia && (
             <button
               type="button"
@@ -53,6 +71,15 @@ export default function PlayerBroll({ broll, aoUsarComoReferencia, usandoComoRef
           >
             Baixar
           </a>
+          {aoApagar && (
+            <button
+              type="button"
+              onClick={aoApagar}
+              className="rounded-md border border-red-200 px-2.5 py-1 font-medium text-red-700 hover:bg-red-50"
+            >
+              Apagar
+            </button>
+          )}
         </span>
       </div>
     </div>

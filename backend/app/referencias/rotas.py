@@ -1,6 +1,6 @@
 """Rotas das referências."""
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -24,6 +24,12 @@ async def enviar(sessao_id: str, arquivo: UploadFile, banco: Session = Depends(o
     # Lê só até 1 byte além do limite: um arquivo gigante é recusado sem ser lido inteiro.
     conteudo = await arquivo.read(servico.LIMITE_LEITURA)
     return servico.anexar(banco, sessao_id, arquivo.filename, conteudo)
+
+
+@rotas.delete("/api/sessoes/{sessao_id}/referencias/{referencia_id}", status_code=204)
+def apagar(sessao_id: str, referencia_id: str, banco: Session = Depends(obter_banco)):
+    servico.apagar(banco, sessao_id, referencia_id)
+    return Response(status_code=204)
 
 
 class DeBroll(BaseModel):

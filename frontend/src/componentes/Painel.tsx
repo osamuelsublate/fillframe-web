@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import type { Referencia } from '../api/referencias'
 import type { SessaoCompleta } from '../api/sessoes'
 import AbaCriacao from './AbaCriacao'
+import AbaGaleria from './AbaGaleria'
 
 type Aba = 'criacao' | 'galeria'
 
@@ -10,11 +12,12 @@ export type Destaque = { criacaoId: string; editar: boolean; vez: number }
 type Props = {
   sessao: SessaoCompleta | undefined
   destaque: Destaque | null
+  aoMandarParaChat: (referencia: Referencia) => void
   cabecalho: React.ReactNode
 }
 
 // Painel da direita, com as abas Criação e Galeria.
-export default function Painel({ sessao, destaque, cabecalho }: Props) {
+export default function Painel({ sessao, destaque, aoMandarParaChat, cabecalho }: Props) {
   const [aba, setAba] = useState<Aba>('criacao')
   const [vezVista, setVezVista] = useState(destaque?.vez)
 
@@ -25,7 +28,7 @@ export default function Painel({ sessao, destaque, cabecalho }: Props) {
   }
 
   return (
-    <aside className="flex w-[28rem] shrink-0 flex-col border-l border-stone-200 bg-white">
+    <aside className="relative flex w-[28rem] shrink-0 flex-col border-l border-stone-200 bg-white">
       <div className="flex h-12 items-center justify-between border-b border-stone-200 px-3">
         <div className="flex gap-1 text-sm">
           <BotaoAba ativa={aba === 'criacao'} aoClicar={() => setAba('criacao')}>
@@ -38,17 +41,13 @@ export default function Painel({ sessao, destaque, cabecalho }: Props) {
         {cabecalho}
       </div>
 
-      {aba === 'criacao' ? (
-        sessao ? (
-          // key: ao trocar de sessão, a aba volta para a lista.
-          <AbaCriacao key={sessao.id} sessao={sessao} destaque={destaque} />
-        ) : (
-          <div className="flex flex-1 items-center justify-center text-sm text-stone-500">Carregando…</div>
-        )
+      {!sessao ? (
+        <div className="flex flex-1 items-center justify-center text-sm text-stone-500">Carregando…</div>
+      ) : aba === 'criacao' ? (
+        // key: ao trocar de sessão, a aba volta para a lista.
+        <AbaCriacao key={sessao.id} sessao={sessao} destaque={destaque} />
       ) : (
-        <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-stone-500">
-          Os brolls gerados vão aparecer aqui.
-        </div>
+        <AbaGaleria key={sessao.id} sessao={sessao} aoMandarParaChat={aoMandarParaChat} />
       )}
     </aside>
   )

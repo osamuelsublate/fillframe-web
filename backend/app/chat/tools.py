@@ -90,8 +90,9 @@ DEFINICOES = [
         "function": {
             "name": "ajustar_criacao",
             "description": (
-                "Edita um rascunho existente (só funciona em criações com situação 'rascunho'). "
-                "Mande apenas os campos que mudam. Não gera nada."
+                "Ajusta uma criação. Se ela ainda é rascunho, edita o próprio rascunho. Se já foi gerada "
+                "(pronto, falhou ou gerando), cria uma NOVA VERSÃO em rascunho a partir dela, com as mudanças: "
+                "a versão original nunca muda. Mande apenas os campos que mudam. Não gera nada."
             ),
             "parameters": {
                 "type": "object",
@@ -118,6 +119,8 @@ def _json(dados) -> str:
 def resumo_criacao(criacao: Criacao) -> dict:
     return {
         "criacao_id": criacao.id,
+        "broll": criacao.raiz_id,  # todas as versões do mesmo broll têm o mesmo valor aqui
+        "partiu_de": criacao.versao_de_id,
         "tipo": criacao.tipo,
         "modelo": criacao.modelo,
         "situacao": criacao.situacao,
@@ -197,9 +200,19 @@ def _preparar(sessao_id: str, argumentos: dict) -> tuple[str, dict | None]:
 
 
 def _ajustar(sessao_id: str, argumentos: dict) -> tuple[str, dict | None]:
+    """Rascunho: edita. Já gerada: cria uma nova versão (nunca sobrescreve uma versão gerada)."""
     criacao_id = argumentos.get("criacao_id") or ""
+    mudancas = CriacaoAlterar(**_campos(argumentos))
     with AbrirBanco() as banco:
-        criacao = servico_criacoes.alterar(banco, sessao_id, criacao_id, CriacaoAlterar(**_campos(argumentos)))
+        atual = repositorio_criacoes.buscar(banco, sessao_id, criacao_id)
+        if atual is not None and atual.situacao != "rascunho":
+            base = atual.numero_versao
+            criacao = servico_criacoes.nova_versao(banco, sessao_id, criacao_id, mudancas)
+            resumo = resumo_criacao(criacao)
+            evento = {"acao": "versao_criada", "criacao_id": criacao.id, "prompt": criacao.prompt}
+            aviso = f"Criada a v{criacao.numero_versao} (rascunho) a partir da v{base}. A v{base} não mudou."
+            return _json({"ok": True, "rascunho": resumo, "aviso": aviso}), evento
+        criacao = servico_criacoes.alterar(banco, sessao_id, criacao_id, mudancas)
         resumo = resumo_criacao(criacao)
     evento = {"acao": "criacao_ajustada", "criacao_id": criacao.id, "prompt": criacao.prompt}
     return _json({"ok": True, "rascunho": resumo}), evento

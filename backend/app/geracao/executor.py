@@ -271,6 +271,17 @@ async def _executar(criacao_id: str) -> None:
         _marcar_falha(criacao_id, "Erro inesperado na geração. Tente de novo.")
 
 
+def cancelar(criacao_ids: list[str]) -> None:
+    """Para o acompanhamento local destas criações (ex.: a sessão foi apagada).
+
+    Não existe cancelamento na OpenRouter: se ela terminar depois, o resultado é descartado.
+    """
+    for criacao_id in criacao_ids:
+        tarefa = _tarefas.pop(criacao_id, None)
+        if tarefa is not None:
+            tarefa.cancel()
+
+
 def recuperar_ao_iniciar() -> list[str]:
     """Ao iniciar: imagens `gerando` viram `falhou`; vídeos `gerando` voltam para a fila (spec, seção 7)."""
     with AbrirBanco() as banco:

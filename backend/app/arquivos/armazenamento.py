@@ -1,6 +1,8 @@
 """Arquivos do usuário em backend/data/. O banco guarda só o caminho relativo."""
 
 import io
+import re
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
@@ -96,3 +98,27 @@ def salvar_video(sessao_id: str, conteudo: bytes, formato: str) -> ArquivoSalvo:
         altura=None,
         miniatura=None,
     )
+
+
+def apagar_pasta_da_sessao(sessao_id: str) -> None:
+    """Remove backend/data/sessoes/{sessao_id}/ (arquivos de referências e brolls da sessão)."""
+    if not re.fullmatch(r"[0-9a-f]{32}", sessao_id):
+        raise CaminhoInvalido(sessao_id)
+    pasta = caminho_seguro(f"sessoes/{sessao_id}")
+    if pasta.parent != (PASTA_DADOS / "sessoes").resolve():
+        raise CaminhoInvalido(sessao_id)
+    if pasta.is_dir():
+        shutil.rmtree(pasta)
+
+
+def apagar_arquivos(caminhos: list[str | None]) -> None:
+    """Apaga arquivos de backend/data/ (caminhos relativos do banco). Os que já não existem são ignorados."""
+    for relativo in caminhos:
+        if not relativo:
+            continue
+        try:
+            caminho = caminho_seguro(relativo)
+        except CaminhoInvalido:
+            continue
+        if caminho.is_file():
+            caminho.unlink()

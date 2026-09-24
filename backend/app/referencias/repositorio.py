@@ -1,6 +1,8 @@
-from sqlalchemy import select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
+from app.chat.modelos import Mensagem
+from app.criacoes.modelos import CriacaoReferencia
 from app.referencias.modelos import Referencia
 
 
@@ -22,3 +24,17 @@ def salvar(banco: Session, referencia: Referencia) -> Referencia:
     banco.commit()
     banco.refresh(referencia)
     return referencia
+
+
+def usada_em_criacao(banco: Session, referencia_id: str) -> bool:
+    consulta = select(func.count()).where(CriacaoReferencia.referencia_id == referencia_id)
+    return banco.scalar(consulta) > 0
+
+
+def audio_de_mensagem(banco: Session, referencia_id: str) -> bool:
+    return banco.scalar(select(func.count()).where(Mensagem.audio_referencia_id == referencia_id)) > 0
+
+
+def apagar(banco: Session, referencia_id: str) -> None:
+    banco.execute(delete(Referencia).where(Referencia.id == referencia_id))
+    banco.commit()

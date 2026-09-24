@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ErroApi, pedir } from './cliente'
+import { apagarNaApi, ErroApi, pedir } from './cliente'
 
 export type Referencia = {
   id: string
@@ -48,6 +48,16 @@ export function useReferenciaDeBroll(sessaoId: string) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ broll_id: brollId }),
       }),
+    onSuccess: () => clienteQuery.invalidateQueries({ queryKey: ['sessoes', sessaoId] }),
+  })
+}
+
+// Remove uma referência da sessão (o backend recusa se ela foi usada numa criação).
+export function useApagarReferencia(sessaoId: string) {
+  const clienteQuery = useQueryClient()
+  return useMutation({
+    mutationFn: (referenciaId: string) =>
+      apagarNaApi(`/sessoes/${encodeURIComponent(sessaoId)}/referencias/${encodeURIComponent(referenciaId)}`),
     onSuccess: () => clienteQuery.invalidateQueries({ queryKey: ['sessoes', sessaoId] }),
   })
 }

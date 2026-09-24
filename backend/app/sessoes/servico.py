@@ -1,19 +1,25 @@
 """Regras de negócio das sessões."""
 
+import logging
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.chat import llms
 from app.chat import servico as servico_chat
+from app.arquivos.armazenamento import CaminhoInvalido, apagar_pasta_da_sessao
 from app.config import obter_config
 from app.criacoes import repositorio as repositorio_criacoes
 from app.referencias import repositorio as repositorio_referencias
 from app.db import agora
+from app.geracao import executor
 from app.sessoes import repositorio
 from app.sessoes.esquemas import SessaoAlterar, SessaoCompleta, SessaoCriar
 from app.sessoes.modelos import Sessao
 
 NOME_PADRAO = "Nova sessão"
+
+log = logging.getLogger("fillframe")
 
 
 def listar(banco: Session) -> list[Sessao]:
@@ -61,3 +67,15 @@ def alterar(banco: Session, sessao_id: str, dados: SessaoAlterar) -> Sessao:
     if dados.llm is not None:
         sessao.llm = llms.validar(banco, dados.llm)
     return repositorio.salvar(banco, sessao)
+
+
+def apagar(banco: Session, sessao_id: str) -> None:
+    """Regra "Apagar": para o acompanhamento das gerações, apaga do banco e depois a pasta de arquivos."""
+    _buscar(banco, sessao_id)
+    executor.cancelar(repositorio.ids_das_criacoes(banco, sessao_id))
+    repositorio.apagar(banco, sessao_id)
+    try:
+        apagar_pasta_da_sessao(sessao_id)
+    except (CaminhoInvalido, OSError):
+        # O banco já está limpo; uma sobra de arquivo não impede o uso do app.
+        log.exception("Não foi possível apagar a pasta da sessão %s", sessao_id)

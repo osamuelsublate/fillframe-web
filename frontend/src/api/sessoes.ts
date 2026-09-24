@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { pedir } from './cliente'
+import { apagarNaApi, pedir } from './cliente'
 import type { Criacao } from './criacoes'
 import type { Referencia } from './referencias'
 
@@ -24,7 +24,7 @@ export type Mensagem = {
 export type ChamadaTool = {
   id: string
   nome: string
-  acao?: 'criacao_preparada' | 'criacao_ajustada'
+  acao?: 'criacao_preparada' | 'criacao_ajustada' | 'versao_criada'
   criacao_id?: string
   prompt?: string
 }
@@ -81,5 +81,33 @@ export function useAlterarSessao(id: string) {
         body: JSON.stringify(dados),
       }),
     onSuccess: () => clienteQuery.invalidateQueries({ queryKey: ['sessoes'] }),
+  })
+}
+
+export function useRenomearSessao() {
+  const clienteQuery = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, nome }: { id: string; nome: string }) =>
+      pedir<SessaoResumo>(`/sessoes/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome }),
+      }),
+    onSuccess: () => clienteQuery.invalidateQueries({ queryKey: ['sessoes'] }),
+  })
+}
+
+// Apaga a sessão inteira (conversa, referências, criações, brolls e arquivos). Não dá para desfazer.
+export function useApagarSessao() {
+  const clienteQuery = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => apagarNaApi(`/sessoes/${encodeURIComponent(id)}`),
+    onSuccess: (_, id) => {
+      // Tira da lista na hora, para o app não tentar reabrir a sessão que acabou de sumir.
+      clienteQuery.setQueryData<SessaoResumo[]>(['sessoes'], (atuais) => atuais?.filter((s) => s.id !== id))
+      clienteQuery.removeQueries({ queryKey: ['sessoes', id] })
+      clienteQuery.invalidateQueries({ queryKey: ['sessoes'], exact: true })
+      clienteQuery.invalidateQueries({ queryKey: ['galeria'] })
+    },
   })
 }
