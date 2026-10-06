@@ -6,12 +6,12 @@ from collections.abc import AsyncIterator
 
 from fastapi import HTTPException
 
+from app.arquivos.armazenamento import CaminhoInvalido, caminho_seguro
 from app.chat import anexos, llms, repositorio, tools
 from app.chat.esquemas import MensagemEnviar, MensagemSaida
 from app.chat.modelos import Mensagem
-from app.db import AbrirBanco, agora
 from app.criacoes import repositorio as repositorio_criacoes
-from app.arquivos.armazenamento import CaminhoInvalido, caminho_seguro
+from app.db import AbrirBanco, agora
 from app.openrouter.chat import ErroOpenRouter, conversar_com_tools
 from app.openrouter.transcricao import parte_de_audio, transcrever
 from app.referencias import repositorio as repositorio_referencias

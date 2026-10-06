@@ -1,6 +1,7 @@
 """Catálogo de modelos: normaliza o que vem da OpenRouter e guarda em cache no banco."""
 
 import asyncio
+import contextlib
 import logging
 from datetime import timedelta
 
@@ -54,9 +55,9 @@ def _resumo_preco(itens: list[tuple[float, str]]) -> dict | None:
 
 def normalizar_imagem(cru: dict) -> ModeloCatalogo:
     endpoints = cru.get("endpoints") or []
-    parametros = (endpoints[0].get("supported_parameters") if endpoints else None) or cru.get(
-        "supported_parameters"
-    ) or {}
+    parametros = (
+        (endpoints[0].get("supported_parameters") if endpoints else None) or cru.get("supported_parameters") or {}
+    )
 
     referencias = parametros.get("input_references")
     max_referencias = _maximo(referencias) or 0
@@ -219,10 +220,9 @@ async def atualizar_se_vencido() -> None:
     """Chamado ao iniciar o backend, em segundo plano (não trava a subida)."""
     if not catalogo_vencido():
         return
-    try:
+    # Sem internet: segue com o cache que houver.
+    with contextlib.suppress(HTTPException):
         await atualizar_catalogo()
-    except HTTPException:
-        pass  # Sem internet: segue com o cache que houver.
 
 
 # ---------- Consultas ----------

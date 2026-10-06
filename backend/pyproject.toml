@@ -23,3 +23,18 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16.8",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+# Erros comuns, imports, bugs prováveis e simplificações.
+select = ["E", "F", "I", "B", "UP", "SIM"]
+# B008: `Depends(...)` como valor padrão é o jeito normal do FastAPI.
+ignore = ["B008"]

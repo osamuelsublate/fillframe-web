@@ -1,14 +1,13 @@
 """Arquivos dos brolls, servidos por id (com suporte a Range para o player de vídeo)."""
 
 import re
-
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from app.arquivos.armazenamento import CaminhoInvalido, caminho_seguro
+from app.arquivos.armazenamento import CABECALHOS_SEGUROS, CaminhoInvalido, caminho_seguro
 from app.brolls import repositorio
 from app.brolls.esquemas import ItemGaleria
 from app.brolls.modelos import Broll
@@ -29,7 +28,15 @@ def _nome_para_download(broll: Broll, criacao: Criacao | None) -> str:
 
 # Campos do broll que vão para cada item da Galeria.
 BROLL_CAMPOS = (
-    "id", "indice", "formato", "largura", "altura", "duracao_segundos", "tamanho_bytes", "criado_em", "url",
+    "id",
+    "indice",
+    "formato",
+    "largura",
+    "altura",
+    "duracao_segundos",
+    "tamanho_bytes",
+    "criado_em",
+    "url",
     "url_miniatura",
 )
 
@@ -86,5 +93,7 @@ def arquivo_broll(
     formato = "image/jpeg" if relativo == broll.miniatura else broll.formato
     if download:
         criacao = banco.get(Criacao, broll.criacao_id)
-        return FileResponse(caminho, media_type=formato, filename=_nome_para_download(broll, criacao))
-    return FileResponse(caminho, media_type=formato)
+        return FileResponse(
+            caminho, media_type=formato, filename=_nome_para_download(broll, criacao), headers=CABECALHOS_SEGUROS
+        )
+    return FileResponse(caminho, media_type=formato, headers=CABECALHOS_SEGUROS)

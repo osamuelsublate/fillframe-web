@@ -23,6 +23,7 @@ export type EventoTool = {
 }
 
 type AoReceber = {
+  aoSalva?: () => void // a mensagem da pessoa foi guardada no backend
   aoTranscricao: (texto: string) => void
   aoTexto: (pedaco: string) => void
   aoTool: (evento: EventoTool) => void
@@ -35,7 +36,7 @@ export async function enviarMensagem(
   texto: string,
   referenciaIds: string[],
   audioReferenciaId: string | null,
-  { aoTranscricao, aoTexto, aoTool, aoErro }: AoReceber,
+  { aoSalva, aoTranscricao, aoTexto, aoTool, aoErro }: AoReceber,
 ) {
   let resposta: Response
   try {
@@ -67,7 +68,8 @@ export async function enviarMensagem(
     }
     if (!dados) return
     const conteudo = JSON.parse(dados)
-    if (evento === 'texto') aoTexto(conteudo.texto)
+    if (evento === 'usuario') aoSalva?.()
+    else if (evento === 'texto') aoTexto(conteudo.texto)
     else if (evento === 'transcricao') aoTranscricao(conteudo.transcricao)
     else if (evento === 'tool') aoTool(conteudo)
     else if (evento === 'erro') {

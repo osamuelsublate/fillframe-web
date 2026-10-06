@@ -31,7 +31,7 @@ Teste da pessoa:
 4. Coloque uma chave inválida em `backend/.env`, reinicie e tente gerar: deve aparecer a mensagem de chave inválida (e o aviso de primeiro acesso).
 
 ## Onda 6.2: Conferência de segurança e limpeza
-Status: pendente
+Status: concluída (2026-09-24)
 Objetivo: conferir que o app só é acessível pelo seu computador, que a chave nunca vaza e que as entradas são validadas, remover código morto e deixar o README final.
 Depende de: 6.1
 Ler antes: spec/arquitetura.md (seções 3, 4 e 8); spec/dados.md ("Dados sensíveis", "Implicações técnicas"); spec/usuarios.md ("Implicações técnicas")

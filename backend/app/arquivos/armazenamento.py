@@ -122,3 +122,7 @@ def apagar_arquivos(caminhos: list[str | None]) -> None:
             continue
         if caminho.is_file():
             caminho.unlink()
+
+
+# Cabeçalhos dos arquivos servidos: o navegador nunca executa nada que venha deles (ex.: um .html anexado).
+CABECALHOS_SEGUROS = {"X-Content-Type-Options": "nosniff", "Content-Security-Policy": "sandbox"}

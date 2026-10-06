@@ -3,12 +3,12 @@
 from collections.abc import Iterator
 from datetime import UTC, datetime
 
-from alembic import command
 from alembic.config import Config as ConfigAlembic
 from sqlalchemy import DateTime, create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from sqlalchemy.types import TypeDecorator
 
+from alembic import command
 from app.config import PASTA_BACKEND
 
 PASTA_DADOS = PASTA_BACKEND / "data"

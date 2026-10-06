@@ -6,10 +6,10 @@ from fastapi import HTTPException
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 
+from app.arquivos.armazenamento import apagar_arquivos
 from app.criacoes import estimativa, repositorio, validacao
 from app.criacoes.esquemas import CriacaoAlterar, CriacaoCriar
 from app.criacoes.modelos import SITUACOES, Criacao, CriacaoReferencia
-from app.arquivos.armazenamento import apagar_arquivos
 from app.db import agora
 from app.geracao import executor
 from app.sessoes import repositorio as repositorio_sessoes
@@ -194,9 +194,7 @@ def gerar(banco: Session, sessao_id: str, criacao_id: str) -> Criacao:
     mudou = banco.execute(
         update(Criacao)
         .where(Criacao.id == criacao_id, Criacao.situacao == "rascunho")
-        .values(
-            situacao="gerando", iniciada_em=momento, estimativa_segundos=estimativa_segundos, erro=None, **campos
-        )
+        .values(situacao="gerando", iniciada_em=momento, estimativa_segundos=estimativa_segundos, erro=None, **campos)
     ).rowcount
     if not mudou:
         banco.rollback()

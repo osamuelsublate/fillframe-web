@@ -55,9 +55,7 @@ async def gerar_imagens(
     imagens = []
     for item in dados.get("data") or []:
         if item.get("b64_json"):
-            imagens.append(
-                ImagemGerada(base64.b64decode(item["b64_json"]), item.get("media_type") or "image/png")
-            )
+            imagens.append(ImagemGerada(base64.b64decode(item["b64_json"]), item.get("media_type") or "image/png"))
         elif item.get("url"):
             baixada = await obter_cliente().get(item["url"], timeout=TEMPO_LIMITE)
             baixada.raise_for_status()

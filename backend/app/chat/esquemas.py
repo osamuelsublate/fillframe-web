@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class MensagemEnviar(BaseModel):
-    texto: str | None = Field(default=None, max_length=50_000)
+    texto: str | None = None  # sem limite de tamanho: a mensagem pode ser do tamanho que for
     audio_referencia_id: str | None = None  # áudio gravado (Referência do tipo audio)
     referencia_ids: list[str] = Field(default=[], max_length=20)
 

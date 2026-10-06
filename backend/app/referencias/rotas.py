@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.arquivos.armazenamento import CaminhoInvalido, caminho_seguro
+from app.arquivos.armazenamento import CABECALHOS_SEGUROS, CaminhoInvalido, caminho_seguro
 from app.db import obter_banco
 from app.referencias import servico
 from app.referencias.esquemas import ReferenciaSaida
@@ -53,5 +53,6 @@ def arquivo_referencia(referencia_id: str, download: bool = False, banco: Sessio
     if not caminho.is_file():
         raise HTTPException(status_code=404, detail="Arquivo não encontrado")
     nome = referencia.nome_original or caminho.name
-    formato = referencia.formato if referencia.tipo != "texto" else f"{referencia.formato}; charset=utf-8"
-    return FileResponse(caminho, media_type=formato, filename=nome if download else None)
+    # Texto sempre como texto puro: um .html ou .js anexado aparece como código, nunca é executado.
+    formato = referencia.formato if referencia.tipo != "texto" else "text/plain; charset=utf-8"
+    return FileResponse(caminho, media_type=formato, filename=nome if download else None, headers=CABECALHOS_SEGUROS)

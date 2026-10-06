@@ -27,9 +27,7 @@ async def conversar(modelo: str, mensagens: list[dict], tools: list[dict] | None
     # Os pedidos de tool chegam em pedaços, identificados pelo índice.
     chamadas: dict[int, dict] = {}
     try:
-        async with obter_cliente().stream(
-            "POST", "/chat/completions", json=corpo, timeout=TEMPO_LIMITE
-        ) as resposta:
+        async with obter_cliente().stream("POST", "/chat/completions", json=corpo, timeout=TEMPO_LIMITE) as resposta:
             if resposta.status_code != 200:
                 raise ErroOpenRouter(mensagem_de_erro(await resposta.aread(), resposta.status_code))
 

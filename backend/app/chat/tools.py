@@ -179,7 +179,11 @@ def _listar_modelos(argumentos: dict) -> tuple[str, None]:
 
 
 def _campos(argumentos: dict) -> dict:
-    campos = {k: argumentos[k] for k in ("tipo", "modelo", "prompt", "orientacao", "proporcao", "duracao", "resolucao") if k in argumentos}
+    campos = {
+        k: argumentos[k]
+        for k in ("tipo", "modelo", "prompt", "orientacao", "proporcao", "duracao", "resolucao")
+        if k in argumentos
+    }
     if "gerar_audio" in argumentos:
         campos["parametros_extras"] = {"generate_audio": bool(argumentos["gerar_audio"])}
     if "referencias" in argumentos:
@@ -242,7 +246,9 @@ async def executar(sessao_id: str, nome: str, argumentos_json: str) -> tuple[str
             return _ajustar(sessao_id, argumentos)
         if nome == "ver_criacoes":
             return _ver(sessao_id)
-        return _json({"erro": f"A ferramenta '{nome}' não existe. Não há ferramenta para gerar: só o usuário gera."}), None
+        return _json(
+            {"erro": f"A ferramenta '{nome}' não existe. Não há ferramenta para gerar: só o usuário gera."}
+        ), None
     except ErroDeCampo as erro:
         return _json({"erro": erro.mensagem, "campo": erro.campo}), None
     except HTTPException as erro:

@@ -44,24 +44,30 @@ export default function Sessao() {
     return () => window.removeEventListener('popstate', aoNavegar)
   }, [])
 
-  // Sem sessão na URL: abre a de uso mais recente, ou cria uma nova se não houver nenhuma.
+  // Sem sessão na URL: abre a de uso mais recente…
+  if (sessaoId === null && sessoes.data && sessoes.data.length > 0) {
+    setSessaoId(sessoes.data[0].id)
+  }
+
+  // …ou cria uma nova se não houver nenhuma.
   useEffect(() => {
-    if (sessaoId !== null || !sessoes.data) return
-    if (sessoes.data.length > 0) {
-      abrir(sessoes.data[0].id, true)
-    } else if (!criandoPrimeira.current) {
-      criandoPrimeira.current = true
-      criarSessao.mutate({}, { onSuccess: (nova) => abrir(nova.id, true) })
-    }
+    if (sessaoId !== null || !sessoes.data || sessoes.data.length > 0 || criandoPrimeira.current) return
+    criandoPrimeira.current = true
+    criarSessao.mutate({}, { onSuccess: (nova) => abrir(nova.id, true) })
   }, [sessaoId, sessoes.data, abrir, criarSessao])
 
   // Sessão da URL não existe: avisa e volta para a última sessão.
+  if (sessaoId !== null && sessao.error instanceof ErroApi && sessao.error.status === 404) {
+    setAviso(sessao.error.message)
+    setSessaoId(null)
+  }
+
+  // Mantém a URL igual à sessão aberta (quando ela muda sem clique: primeira abertura, sessão sumida).
   useEffect(() => {
-    if (sessao.error instanceof ErroApi && sessao.error.status === 404) {
-      setAviso(sessao.error.message)
-      abrir(null, true)
-    }
-  }, [sessao.error, abrir])
+    if (sessaoDaUrl() === sessaoId) return
+    const url = sessaoId ? `?sessao=${encodeURIComponent(sessaoId)}` : window.location.pathname
+    window.history.replaceState(null, '', url)
+  }, [sessaoId])
 
   useEffect(() => {
     if (!aviso) return

@@ -22,7 +22,12 @@ def _detalhe(corpo: bytes | str) -> str | None:
         detalhe = erro.get("message")
         # Alguns provedores mandam o motivo real em metadata.raw.
         bruto = (erro.get("metadata") or {}).get("raw")
-        if bruto and isinstance(bruto, str) and len(bruto) < 400 and (not detalhe or detalhe == "Provider returned error"):
+        if (
+            bruto
+            and isinstance(bruto, str)
+            and len(bruto) < 400
+            and (not detalhe or detalhe == "Provider returned error")
+        ):
             detalhe = bruto
         return detalhe
     return erro if isinstance(erro, str) else None
@@ -39,15 +44,16 @@ def traduzir(status: int, detalhe: str | None) -> str:
         return "Muitas chamadas. Tente de novo em instantes."
     if status == 403 or any(sinal in texto for sinal in SINAIS_DE_POLITICA):
         return (
-            "O pedido foi barrado pela política de conteúdo do modelo. Mude o prompt (ou a referência) "
-            "e tente de novo."
+            "O pedido foi barrado pela política de conteúdo do modelo. Mude o prompt (ou a referência) e tente de novo."
         )
     if status == 408:
         return "A OpenRouter demorou demais para responder. Tente de novo."
     if status in (400, 422):
         return f"A OpenRouter recusou os parâmetros: {detalhe}" if detalhe else "A OpenRouter recusou os parâmetros."
     if status == 404:
-        return f"A OpenRouter não encontrou isso: {detalhe}" if detalhe else "A OpenRouter não encontrou o que foi pedido."
+        return (
+            f"A OpenRouter não encontrou isso: {detalhe}" if detalhe else "A OpenRouter não encontrou o que foi pedido."
+        )
     if status in (500, 502, 503, 504):
         base = "O provedor do modelo falhou agora. Tente de novo em instantes ou escolha outro modelo."
         return f"{base} ({detalhe})" if detalhe and detalhe != "Provider returned error" else base

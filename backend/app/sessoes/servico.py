@@ -5,14 +5,14 @@ import logging
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from app.arquivos.armazenamento import CaminhoInvalido, apagar_pasta_da_sessao
 from app.chat import llms
 from app.chat import servico as servico_chat
-from app.arquivos.armazenamento import CaminhoInvalido, apagar_pasta_da_sessao
 from app.config import obter_config
 from app.criacoes import repositorio as repositorio_criacoes
-from app.referencias import repositorio as repositorio_referencias
 from app.db import agora
 from app.geracao import executor
+from app.referencias import repositorio as repositorio_referencias
 from app.sessoes import repositorio
 from app.sessoes.esquemas import SessaoAlterar, SessaoCompleta, SessaoCriar
 from app.sessoes.modelos import Sessao

@@ -9,7 +9,6 @@ from app.brolls.modelos import Broll
 from app.db import Base, DataHoraUTC, agora
 
 SITUACOES = ("rascunho", "gerando", "pronto", "falhou", "apagado")
-PAPEIS = ("referencia", "primeiro_quadro", "ultimo_quadro")
 
 
 class CriacaoReferencia(Base):
@@ -17,9 +16,7 @@ class CriacaoReferencia(Base):
 
     __tablename__ = "criacao_referencias"
 
-    criacao_id: Mapped[str] = mapped_column(
-        String(32), ForeignKey("criacoes.id", ondelete="CASCADE"), primary_key=True
-    )
+    criacao_id: Mapped[str] = mapped_column(String(32), ForeignKey("criacoes.id", ondelete="CASCADE"), primary_key=True)
     referencia_id: Mapped[str] = mapped_column(
         String(32), ForeignKey("referencias.id", ondelete="RESTRICT"), primary_key=True, index=True
     )

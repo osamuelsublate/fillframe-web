@@ -67,9 +67,7 @@ def _buscar_modelo(banco: Session, tipo: str, modelo_id: str) -> ModeloCatalogo:
             return modelo
     outro_tipo = "video" if tipo == "imagem" else "imagem"
     if any(m.id == modelo_id for m in servico_modelos.listar(banco, outro_tipo)):
-        raise ErroDeCampo(
-            f"O modelo {modelo_id} é de {NOMES_TIPO[outro_tipo]}, não de {NOMES_TIPO[tipo]}.", "modelo"
-        )
+        raise ErroDeCampo(f"O modelo {modelo_id} é de {NOMES_TIPO[outro_tipo]}, não de {NOMES_TIPO[tipo]}.", "modelo")
     raise ErroDeCampo(
         f"O modelo {modelo_id} não está na lista de modelos de {NOMES_TIPO[tipo]} da OpenRouter.", "modelo"
     )
@@ -134,7 +132,11 @@ def _duracao(config: Config, modelo: ModeloCatalogo) -> int | None:
     if len(aceitas) > 4 and aceitas == list(range(aceitas[0], aceitas[-1] + 1)):
         faixa = f"de {aceitas[0]} a {aceitas[-1]} segundos"
     else:
-        faixa = f"{', '.join(str(d) for d in aceitas[:-1])} ou {aceitas[-1]} segundos" if len(aceitas) > 1 else f"{aceitas[0]} segundos"
+        faixa = (
+            f"{', '.join(str(d) for d in aceitas[:-1])} ou {aceitas[-1]} segundos"
+            if len(aceitas) > 1
+            else f"{aceitas[0]} segundos"
+        )
     if config.duracao is None:
         raise ErroDeCampo(f"Escolha a duração do vídeo. O modelo {_nome(modelo)} aceita {faixa}.", "duracao")
     if config.duracao not in aceitas:

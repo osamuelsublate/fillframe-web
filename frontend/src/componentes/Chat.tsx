@@ -151,6 +151,7 @@ export default function Chat({ sessao, anexoExterno = null, aoRevisarCriacao }: 
     if ((!texto && !audio) || enviando || subindoAnexo) return
 
     const prontos = anexos.flatMap((a) => (a.referencia ? [a.referencia] : []))
+    const anexosDoEnvio = anexos
     setRascunho('')
     setAnexos([])
     setErro(null)
@@ -165,7 +166,11 @@ export default function Chat({ sessao, anexoExterno = null, aoRevisarCriacao }: 
     })
 
     let falhou: string | null = null
+    let salva = false
     await enviarMensagem(sessao.id, texto, prontos.map((r) => r.id), audio?.id ?? null, {
+      aoSalva: () => {
+        salva = true
+      },
       aoTranscricao: (transcricao) => setEnvio((atual) => atual && { ...atual, transcricao }),
       aoTexto: (pedaco) => setEnvio((atual) => atual && { ...atual, partes: juntarTexto(atual.partes, pedaco) }),
       aoTool: (evento) => {
@@ -179,14 +184,28 @@ export default function Chat({ sessao, anexoExterno = null, aoRevisarCriacao }: 
       },
     })
 
-    setEnvio((atual) => atual && { ...atual, terminou: true })
     // Recarrega a conversa salva e o histórico (a sessão sobe para o topo).
-    await Promise.all([
-      clienteQuery.invalidateQueries({ queryKey: ['sessoes', sessao.id] }),
-      clienteQuery.invalidateQueries({ queryKey: ['sessoes'], exact: true }),
-    ])
-    setEnvio(null)
-    setErro(falhou)
+    const recarregar = () =>
+      Promise.all([
+        clienteQuery.invalidateQueries({ queryKey: ['sessoes', sessao.id] }),
+        clienteQuery.invalidateQueries({ queryKey: ['sessoes'], exact: true }),
+      ])
+
+    if (falhou) {
+      // Falhou: mostra o erro na hora, sem esperar a recarga (que também pode falhar).
+      setEnvio(null)
+      setErro(falhou)
+      // Se a mensagem nem chegou a ser guardada, o texto e os anexos voltam para a caixa: nada se perde.
+      if (!salva) {
+        setRascunho((atual) => atual || texto)
+        setAnexos((atuais) => (atuais.length ? atuais : anexosDoEnvio))
+      }
+      void recarregar()
+    } else {
+      setEnvio((atual) => atual && { ...atual, terminou: true })
+      await recarregar()
+      setEnvio(null)
+    }
     caixaTexto.current?.focus()
   }
 

@@ -28,9 +28,7 @@ def versoes(banco: Session, sessao_id: str, raiz_id: str) -> list[Criacao]:
 
 
 def maior_versao(banco: Session, sessao_id: str, raiz_id: str) -> int:
-    consulta = select(func.max(Criacao.numero_versao)).where(
-        Criacao.sessao_id == sessao_id, Criacao.raiz_id == raiz_id
-    )
+    consulta = select(func.max(Criacao.numero_versao)).where(Criacao.sessao_id == sessao_id, Criacao.raiz_id == raiz_id)
     return banco.scalar(consulta) or 0
 
 

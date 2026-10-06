@@ -54,6 +54,28 @@ async def ciclo_de_vida(_: FastAPI):
 
 app = FastAPI(title="FillFrame", lifespan=ciclo_de_vida)
 
+# Endereços pelos quais o app pode ser chamado: o backend direto ou pelo proxy do frontend.
+HOSTS_PERMITIDOS = {f"{nome}:{porta}" for nome in ("127.0.0.1", "localhost") for porta in (PORTA, 5173)}
+ORIGENS_PERMITIDAS = {f"http://{host}" for host in HOSTS_PERMITIDOS}
+METODOS_SEM_EFEITO = {"GET", "HEAD", "OPTIONS"}
+
+
+@app.middleware("http")
+async def so_o_proprio_fillframe(request: Request, call_next):
+    """Protege contra sites de fora que o navegador esteja abrindo ao mesmo tempo.
+
+    - Host estranho: bloqueia "DNS rebinding" (um site fingindo ser 127.0.0.1 para ler os dados).
+    - Origem estranha em pedidos que mudam algo: bloqueia um site mandando, por exemplo, "Gerar"
+      (o CORS só impede a leitura da resposta, não o envio de um pedido simples).
+    """
+    if request.headers.get("host") not in HOSTS_PERMITIDOS:
+        return JSONResponse(status_code=403, content={"erro": "Endereço não permitido"})
+    origem = request.headers.get("origin")
+    if request.method not in METODOS_SEM_EFEITO and origem is not None and origem not in ORIGENS_PERMITIDAS:
+        return JSONResponse(status_code=403, content={"erro": "Pedido de outro site recusado"})
+    return await call_next(request)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[ORIGEM_FRONTEND],
@@ -81,9 +103,31 @@ async def erro_de_campo(_: Request, exc: ErroDeCampo) -> JSONResponse:
     return JSONResponse(status_code=exc.status, content=conteudo)
 
 
+def _mensagem_de_validacao(exc: RequestValidationError) -> str:
+    """Primeiro problema dos dados enviados, em português."""
+    erros = exc.errors()
+    if not erros:
+        return "Dados enviados são inválidos"
+    erro = erros[0]
+    campo = str(next((p for p in reversed(erro.get("loc", ())) if isinstance(p, str) and p != "body"), "")) or "pedido"
+    limite = (erro.get("ctx") or {}).get("max_length")
+    tipo = erro.get("type", "")
+    if tipo == "string_too_long":
+        return f"O campo {campo} passou do limite de {limite} caracteres."
+    if tipo == "too_long":
+        return f"Itens demais em {campo} (máximo {limite})."
+    if tipo == "json_invalid":
+        return "O pedido chegou com dados mal formados."
+    if tipo == "missing":
+        return f"Falta o campo {campo}."
+    if tipo in ("literal_error", "enum"):
+        return f"Valor não aceito no campo {campo}."
+    return f"Valor inválido no campo {campo}."
+
+
 @app.exception_handler(RequestValidationError)
 async def erro_validacao(_: Request, exc: RequestValidationError) -> JSONResponse:
-    return JSONResponse(status_code=422, content={"erro": "Dados enviados são inválidos"})
+    return JSONResponse(status_code=422, content={"erro": _mensagem_de_validacao(exc)})
 
 
 @app.exception_handler(Exception)
