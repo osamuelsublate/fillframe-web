@@ -51,6 +51,11 @@ Abrir e escolher a sessão → Conversar com a LLM → Anexar referências → E
 - Galeria da sessão e de todas as sessões, com filtros, baixar e mandar para o chat (5.2)
 - *Fechamento:* revisão das telas (6.1), conferência de segurança e limpeza (6.2)
 
+### 9. Visual no estilo Apple
+- Base do visual (cores, fonte, raios, animações) e moldura da tela (7.1)
+- Chat no estilo das mensagens da Apple (7.2)
+- Painel no estilo novo e modo escuro (7.3)
+
 ## Fora do mapa (adiado, conforme spec/telas.md)
 - Aviso quando a criação termina (som ou notificação do navegador)
 - Editar o vídeo final (cortes, legendas, trilha)

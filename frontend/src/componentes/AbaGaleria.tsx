@@ -5,14 +5,14 @@ import { useReferenciaDeBroll, type Referencia } from '../api/referencias'
 import type { SessaoCompleta } from '../api/sessoes'
 import { minutosESegundos } from '../utils/tempo'
 import Confirmacao from './Confirmacao'
+import { IconeVoltar } from './Icones'
 import PlayerBroll from './PlayerBroll'
+import Segmentado from './Segmentado'
 
 type Props = {
   sessao: SessaoCompleta
   aoMandarParaChat: (referencia: Referencia) => void
 }
-
-type Opcao<T> = { valor: T; rotulo: string }
 
 // Aba Galeria: todos os brolls prontos da sessão (ou de todas), com filtros.
 export default function AbaGaleria({ sessao, aoMandarParaChat }: Props) {
@@ -36,8 +36,9 @@ export default function AbaGaleria({ sessao, aoMandarParaChat }: Props) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="space-y-2 border-b border-stone-200 p-3">
-        <Alternador<boolean>
+      <div className="space-y-2 border-b border-separador p-3">
+        <Segmentado<boolean>
+          nome="Quais sessões"
           opcoes={[
             { valor: false, rotulo: 'Esta sessão' },
             { valor: true, rotulo: 'Todas as sessões' },
@@ -46,7 +47,9 @@ export default function AbaGaleria({ sessao, aoMandarParaChat }: Props) {
           aoMudar={setTodas}
         />
         <div className="flex flex-wrap gap-2">
-          <Alternador<FiltrosGaleria['tipo']>
+          <Segmentado<FiltrosGaleria['tipo']>
+            nome="Tipo"
+            pequeno
             opcoes={[
               { valor: null, rotulo: 'Tudo' },
               { valor: 'imagem', rotulo: 'Imagem' },
@@ -55,7 +58,9 @@ export default function AbaGaleria({ sessao, aoMandarParaChat }: Props) {
             valor={tipo}
             aoMudar={setTipo}
           />
-          <Alternador<FiltrosGaleria['orientacao']>
+          <Segmentado<FiltrosGaleria['orientacao']>
+            nome="Formato"
+            pequeno
             opcoes={[
               { valor: null, rotulo: 'Todas' },
               { valor: 'vertical', rotulo: 'Vertical' },
@@ -68,14 +73,14 @@ export default function AbaGaleria({ sessao, aoMandarParaChat }: Props) {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
-        {galeria.isPending && <p className="text-sm text-stone-500">Carregando…</p>}
-        {galeria.isError && <p className="text-sm text-red-700">{galeria.error.message}</p>}
+        {galeria.isPending && <p className="text-rotulo-2">Carregando…</p>}
+        {galeria.isError && <p className="text-vermelho-texto">{galeria.error.message}</p>}
         {galeria.data?.length === 0 && (
-          <p className="py-6 text-center text-sm text-stone-500">
+          <p className="py-10 text-center text-rotulo-2">
             {tipo || orientacao ? 'Nenhum broll com esses filtros.' : 'Nenhum broll pronto ainda.'}
           </p>
         )}
-        <ul className="grid grid-cols-2 gap-2">
+        <ul className="grid grid-cols-2 gap-3">
           {galeria.data?.map((item) => (
             <ItemDaGaleria
               key={item.id}
@@ -124,20 +129,27 @@ export default function AbaGaleria({ sessao, aoMandarParaChat }: Props) {
         <div
           role="dialog"
           aria-label="Broll em tamanho grande"
-          className="absolute inset-0 z-20 flex flex-col bg-white"
+          className="surgir absolute inset-0 z-20 flex flex-col bg-agrupado"
         >
-          <div className="flex items-center gap-2 border-b border-stone-200 px-3 py-2">
-            <button type="button" onClick={() => setAberto(null)} className="text-sm text-stone-600 hover:text-stone-900">
-              ← Galeria
+          <div className="relative flex h-13 shrink-0 items-center justify-center border-b border-separador bg-fundo px-24">
+            <button
+              type="button"
+              onClick={() => setAberto(null)}
+              className="apertar absolute left-1.5 flex items-center gap-0.5 rounded-md py-1 pr-2 pl-0.5 font-medium text-azul hover:bg-azul/10"
+            >
+              <IconeVoltar className="h-4.5 w-4.5" />
+              Galeria
             </button>
-            <span className="truncate text-sm font-medium">
+            <span className="truncate font-semibold">
               v{aberto.numero_versao} · {aberto.sessao_nome}
             </span>
           </div>
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
-            <PlayerBroll broll={aberto} aoApagar={() => setApagando(aberto)} />
-            <p className="text-sm text-stone-700">{aberto.prompt}</p>
-            <p className="text-xs text-stone-500">{aberto.modelo}</p>
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            <div className="space-y-3 rounded-2xl bg-superficie p-3.5 shadow-cartao">
+              <PlayerBroll broll={aberto} aoApagar={() => setApagando(aberto)} />
+              <p className="leading-relaxed">{aberto.prompt}</p>
+              <p className="text-nota text-rotulo-2">{aberto.modelo}</p>
+            </div>
           </div>
         </div>
       )}
@@ -168,35 +180,45 @@ function ItemDaGaleria({
   const podeMandar = !ehVideo && daSessaoAberta
 
   return (
-    <li className="overflow-hidden rounded-lg border border-stone-200">
+    <li className="surgir overflow-hidden rounded-2xl bg-superficie shadow-cartao">
       <button
         type="button"
         onClick={aoAbrir}
         title={item.prompt}
-        className="relative block aspect-square w-full bg-stone-100"
+        className="group relative block aspect-square w-full overflow-hidden bg-preenchimento-3"
       >
         {ehVideo ? (
           // preload="metadata": o primeiro quadro do vídeo serve de miniatura.
-          <video src={item.url} preload="metadata" muted className="h-full w-full object-cover" />
+          <video
+            src={item.url}
+            preload="metadata"
+            muted
+            className="h-full w-full object-cover transition-transform duration-300 ease-apple group-hover:scale-[1.03]"
+          />
         ) : (
-          <img src={item.url_miniatura} alt={item.prompt} loading="lazy" className="h-full w-full object-cover" />
+          <img
+            src={item.url_miniatura}
+            alt={item.prompt}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-300 ease-apple group-hover:scale-[1.03]"
+          />
         )}
-        <span className="absolute top-1.5 left-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+        <span className="absolute top-2 left-2 rounded-full bg-black/55 px-2 py-0.5 text-mini font-semibold text-white">
           v{item.numero_versao} · {item.orientacao === 'vertical' ? 'Vertical' : 'Horizontal'}
         </span>
         {ehVideo && item.duracao_segundos && (
-          <span className="absolute right-1.5 bottom-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+          <span className="absolute right-2 bottom-2 rounded-full bg-black/55 px-2 py-0.5 text-mini font-semibold text-white tabular-nums">
             ▶ {minutosESegundos(item.duracao_segundos)}
           </span>
         )}
       </button>
-      <div className="space-y-1.5 p-2">
-        {mostrarSessao && <p className="truncate text-xs text-stone-500">{item.sessao_nome}</p>}
-        <div className="flex gap-1">
+      <div className="space-y-2 p-2.5">
+        {mostrarSessao && <p className="truncate text-nota text-rotulo-2">{item.sessao_nome}</p>}
+        <div className="flex gap-1.5">
           <a
             href={`${item.url}?download=1`}
             download
-            className="flex-1 rounded-md border border-stone-300 px-1.5 py-1 text-center text-xs font-medium text-stone-700 hover:bg-stone-50"
+            className="apertar flex min-h-7 flex-1 items-center justify-center rounded-full bg-azul px-2 py-1 text-center text-nota font-semibold text-white hover:bg-azul-forte"
           >
             Baixar
           </a>
@@ -206,36 +228,16 @@ function ItemDaGaleria({
               onClick={aoMandarParaChat}
               disabled={!podeMandar || mandando}
               title={daSessaoAberta ? 'Anexa esta imagem na caixa do chat' : 'Abra a sessão deste broll'}
-              className="flex-1 rounded-md border border-stone-300 px-1.5 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-400"
+              className="apertar min-h-7 flex-1 rounded-full bg-preenchimento-3 px-2 py-1 text-nota leading-tight font-semibold hover:bg-preenchimento-2 disabled:cursor-not-allowed disabled:text-rotulo-3"
             >
               {mandando ? 'Mandando…' : 'Mandar para o chat'}
             </button>
           )}
         </div>
-        <button type="button" onClick={aoApagar} className="text-xs text-red-700 hover:underline">
+        <button type="button" onClick={aoApagar} className="apertar -ml-1 rounded-md px-1 py-0.5 text-nota font-medium text-vermelho-texto hover:bg-vermelho/10">
           Apagar
         </button>
       </div>
     </li>
-  )
-}
-
-function Alternador<T>({ opcoes, valor, aoMudar }: { opcoes: Opcao<T>[]; valor: T; aoMudar: (valor: T) => void }) {
-  return (
-    <div className="inline-flex rounded-lg bg-stone-100 p-0.5 text-xs">
-      {opcoes.map((opcao) => (
-        <button
-          key={String(opcao.valor)}
-          type="button"
-          onClick={() => aoMudar(opcao.valor)}
-          aria-pressed={valor === opcao.valor}
-          className={`rounded-md px-2.5 py-1 ${
-            valor === opcao.valor ? 'bg-white font-medium shadow-sm' : 'text-stone-600 hover:text-stone-900'
-          }`}
-        >
-          {opcao.rotulo}
-        </button>
-      ))}
-    </div>
   )
 }

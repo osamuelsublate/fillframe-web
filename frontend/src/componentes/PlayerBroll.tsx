@@ -20,12 +20,12 @@ export default function PlayerBroll({
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-center overflow-hidden rounded-lg bg-stone-100">
+      <div className="flex justify-center overflow-hidden rounded-xl bg-preenchimento-3">
         {ehVideo ? (
           // preload="metadata": o primeiro quadro do vídeo serve de miniatura.
           <video src={broll.url} controls preload="metadata" playsInline className="max-h-[28rem] w-auto" />
         ) : (
-          <a href={broll.url} target="_blank" rel="noopener noreferrer" title="Abrir em tamanho real">
+          <a href={broll.url} target="_blank" rel="noopener noreferrer" title="Abrir em tamanho real" className="block">
             <img
               src={broll.url}
               alt="Imagem gerada"
@@ -36,19 +36,19 @@ export default function PlayerBroll({
           </a>
         )}
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-y-1.5 text-xs text-stone-500">
-        <span>
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 text-nota">
+        <span className="text-rotulo-2">
           {broll.largura && broll.altura ? `${broll.largura}×${broll.altura} · ` : ''}
           {broll.duracao_segundos ? `${broll.duracao_segundos.toLocaleString('pt-BR')} s · ` : ''}
           {(broll.tamanho_bytes / 1024 / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MB
         </span>
-        <span className="flex flex-wrap gap-1.5">
+        <span className="flex flex-wrap items-center gap-1.5">
           {aoNovaVersao && (
             <button
               type="button"
               onClick={aoNovaVersao}
               title="Abre um rascunho novo com a mesma configuração, para você ajustar"
-              className="rounded-md border border-stone-300 px-2.5 py-1 font-medium text-stone-700 hover:bg-stone-50"
+              className="apertar h-7 rounded-full bg-preenchimento-3 px-3 font-semibold text-rotulo hover:bg-preenchimento-2"
             >
               Nova versão a partir desta
             </button>
@@ -59,7 +59,7 @@ export default function PlayerBroll({
               onClick={aoUsarComoReferencia}
               disabled={usandoComoReferencia}
               title="Cria um vídeo que começa nesta imagem"
-              className="rounded-md border border-stone-300 px-2.5 py-1 font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60"
+              className="apertar h-7 rounded-full bg-preenchimento-3 px-3 font-semibold text-rotulo hover:bg-preenchimento-2 disabled:opacity-60"
             >
               {usandoComoReferencia ? 'Preparando…' : 'Usar como referência'}
             </button>
@@ -67,7 +67,7 @@ export default function PlayerBroll({
           <a
             href={`${broll.url}?download=1`}
             download
-            className="rounded-md border border-stone-300 px-2.5 py-1 font-medium text-stone-700 hover:bg-stone-50"
+            className="apertar flex h-7 items-center rounded-full bg-azul px-3 font-semibold text-white hover:bg-azul-forte"
           >
             Baixar
           </a>
@@ -75,7 +75,7 @@ export default function PlayerBroll({
             <button
               type="button"
               onClick={aoApagar}
-              className="rounded-md border border-red-200 px-2.5 py-1 font-medium text-red-700 hover:bg-red-50"
+              className="apertar h-7 rounded-full px-3 font-semibold text-vermelho-texto hover:bg-vermelho/10"
             >
               Apagar
             </button>

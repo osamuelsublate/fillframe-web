@@ -29,18 +29,18 @@ export default function ProgressoCriacao({ iniciadaEm, estimativaSegundos, pront
 
   if (pronto) {
     return (
-      <div className="h-1 overflow-hidden rounded-full bg-emerald-100" aria-hidden>
-        <div className="h-full w-full bg-emerald-500" />
+      <div className="h-1 overflow-hidden rounded-full bg-verde/20" aria-hidden>
+        <div className="h-full w-full rounded-full bg-verde" />
       </div>
     )
   }
 
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center gap-2 text-sm text-amber-800">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+      <div className="flex items-center gap-2 font-medium text-azul">
+        <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-azul/25 border-t-azul" aria-hidden />
         <span>Gerando…</span>
-        <span className="ml-auto font-mono tabular-nums">{minutosESegundos(Math.floor(decorridos))}</span>
+        <span className="ml-auto text-rotulo tabular-nums">{minutosESegundos(Math.floor(decorridos))}</span>
       </div>
       <div
         role="progressbar"
@@ -48,15 +48,15 @@ export default function ProgressoCriacao({ iniciadaEm, estimativaSegundos, pront
         aria-valuemax={100}
         aria-valuenow={Math.round(fracao * 100)}
         aria-label="Andamento estimado"
-        className="h-1.5 overflow-hidden rounded-full bg-amber-100"
+        className="h-1.5 overflow-hidden rounded-full bg-preenchimento-2"
       >
         <div
-          className="h-full rounded-full bg-amber-500 transition-[width] duration-1000 ease-linear"
+          className="h-full rounded-full bg-azul transition-[width] duration-1000 ease-linear"
           style={{ width: `${fracao * 100}%` }}
         />
       </div>
       {estimativaSegundos !== null && (
-        <p className="text-xs text-stone-500">
+        <p className="text-nota text-rotulo-2">
           ~{minutosESegundos(estimativaSegundos)} estimado
           {decorridos > estimativaSegundos && ' · passou da estimativa, ainda gerando'}
         </p>

@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { assinarAvisos, avisosAtuais, fecharAviso } from '../utils/erros'
+import { IconeAlerta, IconeFechar } from './Icones'
 
 // Avisos de erro no canto da tela (para falhas que não aparecem num lugar próprio).
 export default function Avisos() {
@@ -11,16 +12,17 @@ export default function Avisos() {
         <div
           key={aviso.id}
           role="alert"
-          className="pointer-events-auto flex items-start gap-3 rounded-lg border border-red-200 bg-white px-4 py-3 text-sm text-red-800 shadow-lg"
+          className="surgir pointer-events-auto flex items-start gap-2.5 rounded-xl bg-elevado px-3.5 py-3 shadow-flutuante"
         >
+          <IconeAlerta className="mt-px h-4.5 w-4.5 shrink-0 text-vermelho" />
           <span className="flex-1">{aviso.texto}</span>
           <button
             type="button"
             onClick={() => fecharAviso(aviso.id)}
             aria-label="Fechar aviso"
-            className="text-stone-400 hover:text-stone-700"
+            className="apertar -m-1 rounded-full p-1 text-rotulo-3 hover:bg-preenchimento-2 hover:text-rotulo"
           >
-            ×
+            <IconeFechar className="h-3.5 w-3.5" />
           </button>
         </div>
       ))}

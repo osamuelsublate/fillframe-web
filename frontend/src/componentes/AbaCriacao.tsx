@@ -11,6 +11,7 @@ import { useApagarReferencia, useReferenciaDeBroll, type Referencia } from '../a
 import type { SessaoCompleta } from '../api/sessoes'
 import ConfigCriacao, { type InicioCriacao } from './ConfigCriacao'
 import Confirmacao from './Confirmacao'
+import { IconeFechar, IconeMais } from './Icones'
 import type { Destaque } from './Painel'
 import PlayerBroll from './PlayerBroll'
 import ProgressoCriacao from './ProgressoCriacao'
@@ -25,11 +26,11 @@ const NOMES_SITUACAO: Record<Situacao, string> = {
 }
 
 const CORES_SITUACAO: Record<Situacao, string> = {
-  rascunho: 'bg-stone-100 text-stone-700',
-  gerando: 'bg-amber-100 text-amber-800',
-  pronto: 'bg-emerald-100 text-emerald-800',
-  falhou: 'bg-red-100 text-red-800',
-  apagado: 'bg-stone-100 text-stone-400',
+  rascunho: 'bg-preenchimento-2 text-rotulo-2',
+  gerando: 'bg-azul/12 text-azul',
+  pronto: 'bg-verde/15 text-verde-texto',
+  falhou: 'bg-vermelho/12 text-vermelho-texto',
+  apagado: 'bg-preenchimento-3 text-rotulo-3',
 }
 
 type Props = {
@@ -127,28 +128,27 @@ export default function AbaCriacao({ sessao, destaque }: Props) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="border-b border-stone-200 p-3">
+      <div className="px-3 pt-3 pb-1">
         <button
           type="button"
           onClick={() => {
             setInicio(null)
             setEditando('nova')
           }}
-          className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium hover:bg-stone-50"
+          className="apertar flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-azul font-semibold text-white hover:bg-azul-forte"
         >
-          + Nova criação
+          <IconeMais className="h-4 w-4" />
+          Nova criação
         </button>
       </div>
 
-      <div ref={lista} className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
+      <div ref={lista} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
         <ReferenciasDaSessao sessao={sessao} />
         {sessao.criacoes.length === 0 && (
-          <p className="py-6 text-center text-sm text-stone-500">
-            Nenhuma criação nesta sessão ainda.
-          </p>
+          <p className="py-10 text-center text-rotulo-2">Nenhuma criação nesta sessão ainda.</p>
         )}
         {novaVersao.isError && (
-          <p role="alert" className="rounded-md bg-red-50 px-2.5 py-1.5 text-sm text-red-800">
+          <p role="alert" className="rounded-xl bg-vermelho/10 px-3 py-2 text-vermelho-texto">
             {novaVersao.error.message}
           </p>
         )}
@@ -208,10 +208,10 @@ function MensagemApagar({ criacao, versoes }: { criacao: Criacao; versoes: Criac
         Apagar {nome}? {criacao.brolls.length > 0 && 'Os arquivos serão removidos. '}Não dá para desfazer.
       </p>
       {temDerivadas && (
-        <p className="text-stone-600">As versões que partiram dela continuam; ela aparece como “apagada”.</p>
+        <p>As versões que partiram dela continuam; ela aparece como “apagada”.</p>
       )}
       {criacao.situacao === 'gerando' && (
-        <p className="text-stone-600">
+        <p>
           A geração em andamento deixa de ser acompanhada. Se a OpenRouter cobrar, o valor não volta.
         </p>
       )}
@@ -269,26 +269,26 @@ function CartaoCriacao({
   const cabecalho = (
     <>
       <div className="flex items-center justify-between gap-2">
-        <span className="truncate text-xs text-stone-500">
-          {versoes.length > 1 && <span className="mr-1.5 font-medium text-stone-700">v{criacao.numero_versao}</span>}
+        <span className="truncate text-nota text-rotulo-2">
+          {versoes.length > 1 && <span className="mr-1.5 font-semibold text-rotulo">v{criacao.numero_versao}</span>}
           {criacao.modelo}
         </span>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${CORES_SITUACAO[criacao.situacao]}`}>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-mini font-semibold ${CORES_SITUACAO[criacao.situacao]}`}>
           {NOMES_SITUACAO[criacao.situacao]}
         </span>
       </div>
-      <p className="mt-1 line-clamp-2 text-sm">{criacao.prompt}</p>
-      <p className="mt-1.5 text-xs text-stone-500">{detalhes.join(' · ')}</p>
+      <p className="mt-1.5 line-clamp-2 font-medium">{criacao.prompt}</p>
+      <p className="mt-1.5 text-nota text-rotulo-2">{detalhes.join(' · ')}</p>
       {criacao.referencias.length > 0 && (
-        <p className="mt-1 text-xs text-stone-500">{textoReferencias(criacao)}</p>
+        <p className="mt-0.5 text-nota text-rotulo-2">{textoReferencias(criacao)}</p>
       )}
     </>
   )
 
   return (
     <div
-      className={`rounded-lg border p-3 transition-shadow ${
-        destacada ? 'border-stone-800 ring-2 ring-amber-300' : 'border-stone-200'
+      className={`surgir rounded-2xl bg-superficie p-3.5 transition-shadow duration-300 ${
+        destacada ? 'shadow-[0_0_0_2px_var(--ff-azul),var(--ff-sombra-cartao)]' : 'shadow-cartao'
       }`}
     >
       {versoes.length > 1 && (
@@ -300,7 +300,7 @@ function CartaoCriacao({
         type="button"
         onClick={aoAbrir}
         title={rascunho ? 'Editar rascunho' : 'Ver a configuração desta versão'}
-        className="block w-full text-left"
+        className="block w-full rounded-lg text-left"
       >
         {cabecalho}
       </button>
@@ -311,12 +311,12 @@ function CartaoCriacao({
             type="button"
             onClick={() => gerar.mutate(criacao.id)}
             disabled={gerar.isPending}
-            className="w-full rounded-lg bg-stone-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-700 disabled:bg-stone-300"
+            className="apertar h-9 w-full rounded-full bg-azul font-semibold text-white hover:bg-azul-forte disabled:bg-preenchimento disabled:text-rotulo-3"
           >
             {gerar.isPending ? 'Enviando…' : 'Gerar'}
           </button>
           {gerar.isError && (
-            <p role="alert" className="text-sm text-red-700">
+            <p role="alert" className="text-nota text-vermelho-texto">
               {gerar.error.message}
             </p>
           )}
@@ -332,7 +332,7 @@ function CartaoCriacao({
       {criacao.situacao === 'falhou' && (
         <div className="mt-3 space-y-2">
           {criacao.erro && (
-            <p role="alert" className="rounded-md bg-red-50 px-2.5 py-1.5 text-sm text-red-800">
+            <p role="alert" className="rounded-xl bg-vermelho/10 px-3 py-2 text-vermelho-texto">
               {criacao.erro}
             </p>
           )}
@@ -340,7 +340,7 @@ function CartaoCriacao({
             type="button"
             onClick={aoNovaVersao}
             disabled={criandoVersao}
-            className="rounded-md border border-stone-300 px-2.5 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60"
+            className="apertar h-7 rounded-full bg-azul/12 px-3 font-semibold text-azul hover:bg-azul/20 disabled:opacity-60"
           >
             {criandoVersao ? 'Criando…' : 'Nova versão a partir desta'}
           </button>
@@ -349,7 +349,7 @@ function CartaoCriacao({
 
       {criacao.situacao !== 'pronto' && criacao.situacao !== 'apagado' && (
         <div className="mt-2 flex justify-end">
-          <button type="button" onClick={aoApagar} className="text-xs text-red-700 hover:underline">
+          <button type="button" onClick={aoApagar} className="apertar rounded-md px-1.5 py-0.5 text-nota font-medium text-vermelho-texto hover:bg-vermelho/10">
             Apagar
           </button>
         </div>
@@ -368,7 +368,7 @@ function CartaoCriacao({
               aoApagar={aoApagar}
             />
           ))}
-          <p className="text-xs text-stone-500">
+          <p className="text-nota text-rotulo-2">
             {[
               criacao.tempo_gasto_segundos !== null
                 ? `Pronto em ${criacao.tempo_gasto_segundos.toLocaleString('pt-BR')} s`
@@ -393,8 +393,8 @@ function ReferenciasDaSessao({ sessao }: { sessao: SessaoCompleta }) {
   if (imagens.length === 0) return null
   return (
     <section className="pb-2">
-      <h3 className="mb-1.5 text-xs font-medium tracking-wide text-stone-500 uppercase">Referências da sessão</h3>
-      <div className="flex flex-wrap gap-1.5">
+      <h3 className="mb-2 px-1 text-mini font-semibold text-rotulo-2">Referências da sessão</h3>
+      <div className="flex flex-wrap gap-2">
         {imagens.map((referencia) => (
           <div key={referencia.id} className="group relative">
             <a
@@ -402,11 +402,12 @@ function ReferenciasDaSessao({ sessao }: { sessao: SessaoCompleta }) {
               target="_blank"
               rel="noopener noreferrer"
               title={referencia.nome_original ?? 'Imagem de referência'}
+              className="block rounded-xl"
             >
               <img
                 src={referencia.url}
                 alt={referencia.nome_original ?? 'Imagem de referência'}
-                className="h-16 w-16 rounded-lg border border-stone-200 object-cover hover:border-stone-500"
+                className="h-16 w-16 rounded-xl object-cover shadow-cartao transition-transform duration-200 ease-apple hover:scale-105"
               />
             </a>
             <button
@@ -417,9 +418,9 @@ function ReferenciasDaSessao({ sessao }: { sessao: SessaoCompleta }) {
               }}
               aria-label={`Remover ${referencia.nome_original ?? 'imagem'}`}
               title="Remover referência"
-              className="absolute -top-1.5 -right-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-stone-800 text-xs text-white group-hover:flex focus:flex"
+              className="absolute -top-1.5 -right-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-rotulo text-fundo shadow-cartao group-hover:flex focus:flex"
             >
-              ×
+              <IconeFechar className="h-3 w-3" />
             </button>
           </div>
         ))}
@@ -428,7 +429,7 @@ function ReferenciasDaSessao({ sessao }: { sessao: SessaoCompleta }) {
         <Confirmacao
           mensagem={
             <p>
-              Remover a referência <strong>“{removendo.nome_original ?? 'imagem'}”</strong>? O arquivo é apagado. Não
+              Remover a referência <strong className="font-semibold">“{removendo.nome_original ?? 'imagem'}”</strong>? O arquivo é apagado. Não
               dá para desfazer.
             </p>
           }

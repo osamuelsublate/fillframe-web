@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useApagarSessao, useRenomearSessao, type SessaoResumo } from '../api/sessoes'
 import { tempoRelativo } from '../utils/tempo'
+import Confirmacao from './Confirmacao'
+import { IconeNovo, IconeReticencias } from './Icones'
 
 type Props = {
   sessoes: SessaoResumo[] | undefined
@@ -71,30 +73,30 @@ export default function HistoricoSessoes({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="px-3 pb-2">
+      <div className="px-2.5 pb-1">
         <button
           type="button"
           onClick={aoCriar}
           disabled={criando}
-          className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-left text-sm font-medium hover:bg-stone-50 disabled:opacity-60"
+          className="apertar flex h-8 w-full items-center gap-2 rounded-md px-2 font-medium text-azul hover:bg-preenchimento-2 disabled:opacity-60"
         >
-          + Nova sessão
+          <IconeNovo className="h-4.5 w-4.5" />
+          Nova sessão
         </button>
       </div>
 
       {aviso && (
-        <p role="alert" className="mx-3 mb-2 rounded-md bg-red-50 px-2.5 py-1.5 text-xs text-red-800">
+        <p role="alert" className="mx-3 mb-2 rounded-md bg-vermelho/10 px-2.5 py-1.5 text-nota text-vermelho-texto">
           {aviso}
         </p>
       )}
 
-      <nav className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
-        {carregando && <p className="px-2 py-1 text-sm text-stone-500">Carregando…</p>}
-        {erro && <p className="px-2 py-1 text-sm text-red-700">{erro}</p>}
-        {!carregando && sessoes?.length === 0 && (
-          <p className="px-2 py-1 text-sm text-stone-500">Nenhuma sessão ainda.</p>
-        )}
-        <ul className="space-y-0.5">
+      <nav aria-label="Sessões" className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-3">
+        <h2 className="px-2 pt-3 pb-1 text-mini font-semibold text-rotulo-2">Sessões</h2>
+        {carregando && <p className="px-2 py-1 text-rotulo-2">Carregando…</p>}
+        {erro && <p className="px-2 py-1 text-vermelho-texto">{erro}</p>}
+        {!carregando && sessoes?.length === 0 && <p className="px-2 py-1 text-rotulo-2">Nenhuma sessão ainda.</p>}
+        <ul className="space-y-px">
           {sessoes?.map((sessao) => {
             const aberta = sessao.id === sessaoAbertaId
             return (
@@ -110,12 +112,14 @@ export default function HistoricoSessoes({
                     type="button"
                     onClick={() => aoAbrir(sessao.id)}
                     aria-current={aberta ? 'page' : undefined}
-                    className={`w-full rounded-md py-1.5 pr-8 pl-2 text-left ${
-                      aberta ? 'bg-stone-300/70' : 'hover:bg-stone-200'
+                    className={`w-full rounded-md py-1.5 pr-8 pl-2 text-left transition-colors duration-150 ${
+                      aberta ? 'bg-azul text-white' : 'hover:bg-preenchimento-2'
                     }`}
                   >
-                    <span className="block truncate text-sm">{sessao.nome}</span>
-                    <span className="block text-xs text-stone-500">usado {tempoRelativo(sessao.ultimo_uso_em)}</span>
+                    <span className="block truncate font-medium">{sessao.nome}</span>
+                    <span className={`block text-mini ${aberta ? 'text-white/80' : 'text-rotulo-2'}`}>
+                      usado {tempoRelativo(sessao.ultimo_uso_em)}
+                    </span>
                   </button>
                 )}
 
@@ -127,19 +131,20 @@ export default function HistoricoSessoes({
                       setMenuAberto(menuAberto === sessao.id ? null : sessao.id)
                     }}
                     aria-label={`Opções da sessão ${sessao.nome}`}
+                    aria-haspopup="menu"
                     aria-expanded={menuAberto === sessao.id}
-                    className={`absolute top-1.5 right-1 rounded px-1.5 text-stone-500 hover:bg-stone-300 hover:text-stone-900 ${
-                      menuAberto === sessao.id ? '' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'
-                    }`}
+                    className={`apertar absolute top-1/2 right-1.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full ${
+                      aberta ? 'text-white hover:bg-white/20' : 'text-rotulo-2 hover:bg-preenchimento hover:text-rotulo'
+                    } ${menuAberto === sessao.id ? '' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'}`}
                   >
-                    …
+                    <IconeReticencias className="h-4 w-4" />
                   </button>
                 )}
 
                 {menuAberto === sessao.id && (
                   <div
                     role="menu"
-                    className="absolute top-8 right-1 z-20 w-36 overflow-hidden rounded-lg border border-stone-200 bg-white py-1 text-sm shadow-lg"
+                    className="surgir absolute top-full right-1 z-20 mt-1 w-40 rounded-lg bg-elevado p-1 shadow-flutuante"
                   >
                     <button
                       type="button"
@@ -149,10 +154,11 @@ export default function HistoricoSessoes({
                         setAviso(null)
                         setRenomeando(sessao.id)
                       }}
-                      className="block w-full px-3 py-1.5 text-left hover:bg-stone-100"
+                      className="block w-full rounded px-2 py-1 text-left hover:bg-azul hover:text-white"
                     >
                       Renomear
                     </button>
+                    <div className="mx-2 my-1 h-px bg-separador" />
                     <button
                       type="button"
                       role="menuitem"
@@ -161,9 +167,9 @@ export default function HistoricoSessoes({
                         apagar.reset()
                         setApagando(sessao)
                       }}
-                      className="block w-full px-3 py-1.5 text-left text-red-700 hover:bg-red-50"
+                      className="block w-full rounded px-2 py-1 text-left text-vermelho-texto hover:bg-vermelho hover:text-white"
                     >
-                      Apagar
+                      Apagar…
                     </button>
                   </div>
                 )}
@@ -174,36 +180,20 @@ export default function HistoricoSessoes({
       </nav>
 
       {apagando && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div role="alertdialog" aria-labelledby="titulo-apagar" className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
-            <p id="titulo-apagar" className="text-sm leading-relaxed">
-              Apagar a sessão <strong>“{apagando.nome}”</strong> e todos os brolls dela? Não dá para desfazer.
+        <Confirmacao
+          titulo="Apagar sessão?"
+          mensagem={
+            <p>
+              A sessão <strong className="font-semibold text-rotulo">“{apagando.nome}”</strong> e todos os brolls dela
+              serão apagados. Não dá para desfazer.
             </p>
-            {apagar.isError && (
-              <p role="alert" className="mt-3 text-sm text-red-700">
-                {apagar.error.message}
-              </p>
-            )}
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setApagando(null)}
-                disabled={apagar.isPending}
-                className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm hover:bg-stone-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmarApagar}
-                disabled={apagar.isPending}
-                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
-              >
-                {apagar.isPending ? 'Apagando…' : 'Apagar'}
-              </button>
-            </div>
-          </div>
-        </div>
+          }
+          botao="Apagar"
+          ocupado={apagar.isPending}
+          erro={apagar.isError ? apagar.error.message : null}
+          aoConfirmar={confirmarApagar}
+          aoCancelar={() => setApagando(null)}
+        />
       )}
     </div>
   )
@@ -240,7 +230,7 @@ function CampoNome({ nomeAtual, aoSalvar, aoCancelar }: PropsCampoNome) {
         if (evento.key === 'Escape') terminar(false)
       }}
       onBlur={() => terminar(true)}
-      className="w-full rounded-md border border-stone-400 bg-white px-2 py-1.5 text-sm outline-none"
+      className="w-full rounded-md bg-fundo px-2 py-2 font-medium shadow-cartao outline-3 outline-azul/50"
     />
   )
 }

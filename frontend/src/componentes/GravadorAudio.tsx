@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { minutosESegundos } from '../utils/tempo'
+import { IconeMicrofone } from './Icones'
 
 const LIMITE_SEGUNDOS = 10 * 60 // 10 minutos por mensagem de voz
 
@@ -89,22 +90,22 @@ export default function GravadorAudio({ desativado, aoTerminar, aoErro, aoMudarG
 
   if (estado === 'gravando') {
     return (
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 px-2 py-1.5">
-        <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" aria-hidden />
-        <span className="text-sm text-stone-700">Gravando…</span>
-        <span className="font-mono text-sm tabular-nums text-stone-700">{minutosESegundos(segundos)}</span>
+      <div className="surgir flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 py-0.5 pl-3">
+        <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-vermelho" aria-hidden />
+        <span className="font-medium">Gravando…</span>
+        <span className="text-corpo text-rotulo-2 tabular-nums">{minutosESegundos(segundos)}</span>
         <span className="ml-auto flex gap-2">
           <button
             type="button"
             onClick={() => parar(false)}
-            className="rounded-xl border border-stone-300 px-3 py-1.5 text-sm hover:bg-stone-50"
+            className="apertar h-9 rounded-full bg-preenchimento-3 px-4 font-medium hover:bg-preenchimento-2"
           >
             Cancelar
           </button>
           <button
             type="button"
             onClick={() => parar(true)}
-            className="rounded-xl bg-stone-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-stone-700"
+            className="apertar h-9 rounded-full bg-azul px-4 font-semibold text-white hover:bg-azul-forte"
           >
             Enviar áudio
           </button>
@@ -120,12 +121,9 @@ export default function GravadorAudio({ desativado, aoTerminar, aoErro, aoMudarG
       disabled={desativado || estado === 'pedindo'}
       title="Gravar áudio"
       aria-label="Gravar áudio"
-      className="shrink-0 rounded-xl p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50"
+      className="apertar flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-rotulo-2 hover:bg-preenchimento-2 hover:text-rotulo disabled:opacity-40"
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
-        <rect x="9" y="3" width="6" height="12" rx="3" />
-        <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
-      </svg>
+      <IconeMicrofone className="h-5 w-5" />
     </button>
   )
 }

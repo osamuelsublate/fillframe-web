@@ -4,7 +4,8 @@ import { enviarMensagem, useLlms, type EventoTool } from '../api/chat'
 import { ACEITOS, enviarReferencia, type Referencia } from '../api/referencias'
 import { useAlterarSessao, type Mensagem as MensagemSalva, type SessaoCompleta } from '../api/sessoes'
 import GravadorAudio from './GravadorAudio'
-import Mensagem, { AvisoRascunho, type Anexo } from './Mensagem'
+import { IconeClipe, IconeDocumento, IconeEnviar, IconeFechar, IconeSetas } from './Icones'
+import Mensagem, { AvisoRascunho, Digitando, type Anexo } from './Mensagem'
 
 const BOAS_VINDAS = 'Qual conteúdo você vai gravar? Me conta e eu te ajudo a planejar os brolls.'
 
@@ -242,12 +243,12 @@ export default function Chat({ sessao, anexoExterno = null, aoRevisarCriacao }: 
       }}
     >
       {arrastando && (
-        <div className="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-stone-400 bg-stone-50/90 text-sm font-medium text-stone-600">
+        <div className="pointer-events-none absolute inset-3 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-azul bg-fundo/90 text-corpo font-medium text-azul">
           Solte aqui para anexar imagens ou arquivos de texto
         </div>
       )}
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-3xl space-y-6 px-4 py-6">
+        <div className="mx-auto max-w-3xl space-y-5 px-6 py-8">
           {mensagens.length === 0 && !envio && <Mensagem autor="llm" texto={BOAS_VINDAS} />}
 
           {mensagens.map((mensagem) => (
@@ -288,9 +289,7 @@ export default function Chat({ sessao, anexoExterno = null, aoRevisarCriacao }: 
                 ),
               )}
               {!envio.terminou && !esperandoTranscricao && envio.partes[envio.partes.length - 1]?.tipo !== 'texto' && (
-                <p className="animate-pulse text-sm text-stone-500">
-                  {envio.partes.length ? 'Preparando…' : 'Pensando…'}
-                </p>
+                <Digitando texto={envio.partes.length ? 'Preparando…' : 'Pensando…'} />
               )}
             </>
           )}
@@ -300,39 +299,45 @@ export default function Chat({ sessao, anexoExterno = null, aoRevisarCriacao }: 
         </div>
       </div>
 
-      <div className="px-4 pb-4">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-stone-300 bg-white p-2 shadow-sm focus-within:border-stone-500">
+      <div className="px-6 pb-5">
+        <div className="mx-auto max-w-3xl rounded-[22px] bg-fundo p-1.5 shadow-flutuante transition-shadow duration-200 focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--ff-azul)_35%,transparent),var(--ff-sombra-flutuante)]">
           {anexos.length > 0 && (
-            <ul className="flex flex-wrap gap-1.5 px-1 pb-2">
+            <ul className="flex flex-wrap gap-1.5 px-1.5 pt-1 pb-2">
               {anexos.map((anexo) => (
                 <li
                   key={anexo.chave}
-                  className={`flex max-w-full items-center gap-1.5 rounded-lg border px-2 py-1 text-xs ${
-                    anexo.estado === 'erro' ? 'border-red-200 bg-red-50 text-red-800' : 'border-stone-200 bg-stone-50'
+                  className={`surgir flex max-w-full items-center gap-2 rounded-xl py-1 pr-1 pl-1 text-nota ${
+                    anexo.estado === 'erro' ? 'bg-vermelho/10 text-vermelho-texto' : 'bg-preenchimento-3'
                   }`}
                 >
                   {anexo.referencia?.tipo === 'imagem' ? (
-                    <img src={anexo.referencia.url} alt="" className="h-8 w-8 rounded object-cover" />
+                    <img src={anexo.referencia.url} alt="" className="h-9 w-9 rounded-lg object-cover" />
                   ) : (
-                    <span aria-hidden>{anexo.estado === 'enviando' ? '⏳' : anexo.estado === 'erro' ? '⚠️' : '📄'}</span>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-fundo" aria-hidden>
+                      {anexo.estado === 'enviando' ? (
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-preenchimento border-t-azul" />
+                      ) : (
+                        <IconeDocumento className="h-4.5 w-4.5 text-azul" />
+                      )}
+                    </span>
                   )}
                   <span className="max-w-48 truncate">{anexo.nome}</span>
-                  {anexo.estado === 'enviando' && <span className="text-stone-500">enviando…</span>}
+                  {anexo.estado === 'enviando' && <span className="text-rotulo-2">enviando…</span>}
                   {anexo.erro && <span role="alert">{anexo.erro}</span>}
                   <button
                     type="button"
                     onClick={() => setAnexos((atuais) => atuais.filter((a) => a.chave !== anexo.chave))}
                     title="Tirar da mensagem"
                     aria-label={`Tirar ${anexo.nome} da mensagem`}
-                    className="ml-0.5 rounded px-1 text-stone-500 hover:bg-stone-200 hover:text-stone-900"
+                    className="apertar flex h-6 w-6 items-center justify-center rounded-full text-rotulo-2 hover:bg-preenchimento hover:text-rotulo"
                   >
-                    ×
+                    <IconeFechar className="h-3 w-3" />
                   </button>
                 </li>
               ))}
             </ul>
           )}
-          <div className="flex items-end gap-2">
+          <div className="flex items-end gap-1">
             <input
               ref={seletorArquivo}
               type="file"
@@ -350,11 +355,9 @@ export default function Chat({ sessao, anexoExterno = null, aoRevisarCriacao }: 
                 onClick={() => seletorArquivo.current?.click()}
                 title="Anexar imagens ou arquivos de texto"
                 aria-label="Anexar arquivo"
-                className="shrink-0 rounded-xl p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900"
+                className="apertar flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-rotulo-2 hover:bg-preenchimento-2 hover:text-rotulo"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
-                  <path d="m21.4 11.1-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8" />
-                </svg>
+                <IconeClipe className="h-5 w-5" />
               </button>
             )}
             {!gravando && (
@@ -367,7 +370,7 @@ export default function Chat({ sessao, anexoExterno = null, aoRevisarCriacao }: 
                 autoFocus
                 placeholder="Escreva sua mensagem…"
                 title="Enter envia, Shift+Enter quebra a linha"
-                className="max-h-60 min-h-9 min-w-0 flex-1 resize-none bg-transparent px-2 py-1.5 outline-none"
+                className="max-h-60 min-h-9 min-w-0 flex-1 resize-none bg-transparent px-1.5 py-1.5 text-corpo outline-none placeholder:text-rotulo-3"
               />
             )}
             <GravadorAudio
@@ -381,14 +384,20 @@ export default function Chat({ sessao, anexoExterno = null, aoRevisarCriacao }: 
                 type="button"
                 onClick={() => enviar()}
                 disabled={!podeEnviar}
-                className="shrink-0 rounded-xl bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+                title={subindoAudio ? 'Enviando…' : 'Enviar (Enter)'}
+                aria-label={subindoAudio ? 'Enviando…' : 'Enviar'}
+                className="apertar flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-azul text-white hover:bg-azul-forte disabled:cursor-not-allowed disabled:bg-preenchimento disabled:text-fundo"
               >
-                {subindoAudio ? 'Enviando…' : 'Enviar'}
+                {subindoAudio ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                ) : (
+                  <IconeEnviar className="h-4.5 w-4.5" />
+                )}
               </button>
             )}
           </div>
           {erroAudio && (
-            <p role="alert" className="px-2 pt-1.5 text-sm text-red-700">
+            <p role="alert" className="px-3 pt-1 pb-1.5 text-nota text-vermelho-texto">
               {erroAudio}
             </p>
           )}
@@ -446,23 +455,26 @@ export function SeletorLlm({ sessao }: { sessao: SessaoCompleta }) {
   const conhecida = opcoes.some((llm) => llm.id === sessao.llm)
 
   return (
-    <label className="flex items-center gap-2 text-sm text-stone-600">
+    <label className="flex items-center gap-2 text-rotulo-2">
       <span className="hidden sm:inline">LLM</span>
-      <select
-        value={sessao.llm}
-        onChange={(evento) => alterar.mutate({ llm: evento.target.value })}
-        disabled={alterar.isPending || llms.isPending}
-        title={alterar.isError ? alterar.error.message : 'LLM desta sessão'}
-        className="rounded-md border border-stone-300 bg-white px-2 py-1 text-sm outline-none focus:border-stone-500"
-      >
-        {!conhecida && <option value={sessao.llm}>{sessao.llm}</option>}
-        {opcoes.map((llm) => (
-          <option key={llm.id} value={llm.id}>
-            {llm.nome.replace(/^[^:]+:\s*/, '')}
-          </option>
-        ))}
-      </select>
-      {alterar.isError && <span className="text-xs text-red-700">{alterar.error.message}</span>}
+      <span className="relative flex items-center">
+        <select
+          value={sessao.llm}
+          onChange={(evento) => alterar.mutate({ llm: evento.target.value })}
+          disabled={alterar.isPending || llms.isPending}
+          title={alterar.isError ? alterar.error.message : 'LLM desta sessão'}
+          className="apertar h-7 appearance-none rounded-md bg-preenchimento-3 py-0 pr-7 pl-2.5 font-medium text-rotulo hover:bg-preenchimento-2 disabled:opacity-60"
+        >
+          {!conhecida && <option value={sessao.llm}>{sessao.llm}</option>}
+          {opcoes.map((llm) => (
+            <option key={llm.id} value={llm.id}>
+              {llm.nome.replace(/^[^:]+:\s*/, '')}
+            </option>
+          ))}
+        </select>
+        <IconeSetas className="pointer-events-none absolute right-1.5 h-3.5 w-3.5 text-rotulo-2" />
+      </span>
+      {alterar.isError && <span className="text-nota text-vermelho-texto">{alterar.error.message}</span>}
     </label>
   )
 }

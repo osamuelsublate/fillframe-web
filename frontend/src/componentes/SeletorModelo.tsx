@@ -20,16 +20,16 @@ export default function SeletorModelo({ tipo, modeloId, aoEscolher }: Props) {
 
   return (
     <div className="flex flex-col">
-      <div className="space-y-2 border-b border-stone-200 p-3">
+      <div className="space-y-2 border-b border-separador p-3">
         <div className="flex items-center gap-2">
           {atualizadoEm && (
-            <p className="text-xs text-stone-500">Lista atualizada {tempoRelativo(atualizadoEm)}</p>
+            <p className="text-nota text-rotulo-2">Lista atualizada {tempoRelativo(atualizadoEm)}</p>
           )}
           <button
             type="button"
             onClick={() => atualizar.mutate()}
             disabled={atualizar.isPending}
-            className="ml-auto shrink-0 rounded-md border border-stone-300 px-2.5 py-1 text-xs hover:bg-stone-50 disabled:opacity-60"
+            className="apertar ml-auto shrink-0 rounded-md px-2 py-1 text-nota font-medium text-azul hover:bg-azul/10 disabled:opacity-60"
           >
             {atualizar.isPending ? 'Atualizando…' : 'Atualizar lista'}
           </button>
@@ -41,25 +41,24 @@ export default function SeletorModelo({ tipo, modeloId, aoEscolher }: Props) {
           value={busca}
           onChange={(evento) => setBusca(evento.target.value)}
           placeholder={tipo === 'imagem' ? 'Buscar modelo de imagem…' : 'Buscar modelo de vídeo…'}
-          className="w-full rounded-lg border border-stone-300 px-3 py-1.5 text-sm outline-none focus:border-stone-500"
+          className="w-full rounded-lg bg-preenchimento-3 px-3 py-1.5 placeholder:text-rotulo-3 hover:bg-preenchimento-2"
         />
 
         {atualizar.isError && (
-          <p role="alert" className="rounded-md bg-red-50 px-2.5 py-1.5 text-xs text-red-800">
+          <p role="alert" className="rounded-lg bg-vermelho/10 px-2.5 py-1.5 text-nota text-vermelho-texto">
             {atualizar.error.message}
           </p>
         )}
-
       </div>
 
       <div className="max-h-96 space-y-2 overflow-y-auto p-3">
-        {modelos.isPending && <p className="text-sm text-stone-500">Carregando modelos…</p>}
-        {modelos.isError && <p className="text-sm text-red-700">{modelos.error.message}</p>}
+        {modelos.isPending && <p className="text-rotulo-2">Carregando modelos…</p>}
+        {modelos.isError && <p className="text-vermelho-texto">{modelos.error.message}</p>}
         {modelos.data?.length === 0 &&
           (busca.trim() ? (
-            <p className="text-sm text-stone-500">Nenhum modelo encontrado para “{busca.trim()}”.</p>
+            <p className="text-rotulo-2">Nenhum modelo encontrado para “{busca.trim()}”.</p>
           ) : (
-            <p className="text-sm text-stone-500">Buscando os modelos na OpenRouter…</p>
+            <p className="text-rotulo-2">Buscando os modelos na OpenRouter…</p>
           ))}
         {modelos.data?.map((modelo) => (
           <CartaoModelo
@@ -97,21 +96,21 @@ export function CartaoModelo({ modelo, tipo, selecionado, aoSelecionar }: PropsC
       onClick={aoSelecionar}
       title={modelo.descricao}
       aria-label={modelo.nome}
-      className={`block w-full rounded-lg border p-3 text-left transition-colors ${
-        selecionado ? 'border-stone-800 bg-stone-50' : 'border-stone-200 hover:border-stone-400'
+      className={`block w-full rounded-xl p-3 text-left transition-colors duration-150 ${
+        selecionado ? 'bg-azul/10 shadow-[inset_0_0_0_1.5px_var(--ff-azul)]' : 'bg-preenchimento-3 hover:bg-preenchimento-2'
       }`}
     >
       <div className="flex items-baseline justify-between gap-2">
-        <span className="truncate text-sm font-medium">{modelo.nome}</span>
+        <span className="truncate font-semibold">{modelo.nome}</span>
       </div>
-      <p className="mt-0.5 text-xs text-stone-600">
+      <p className="mt-0.5 text-nota text-rotulo-2">
         {textoPreco(modelo.precos.resumo)}
         {modelo.tempo_medio_segundos !== null && (
-          <span className="text-stone-500"> · tempo médio: {minutosESegundos(modelo.tempo_medio_segundos)}</span>
+          <span> · tempo médio: {minutosESegundos(modelo.tempo_medio_segundos)}</span>
         )}
       </p>
 
-      <dl className="mt-2 space-y-1 text-xs">
+      <dl className="mt-2 space-y-1 text-nota">
         <Linha rotulo="Proporções" valores={capacidades.proporcoes} />
         {tipo === 'video' && (
           <Linha rotulo="Durações" valores={textoDuracoes(capacidades.duracoes)} />
@@ -119,7 +118,7 @@ export function CartaoModelo({ modelo, tipo, selecionado, aoSelecionar }: PropsC
         <Linha rotulo="Resoluções" valores={capacidades.resolucoes} />
       </dl>
 
-      {extras.length > 0 && <p className="mt-2 text-xs text-stone-500">{extras.join(' · ')}</p>}
+      {extras.length > 0 && <p className="mt-2 text-nota text-rotulo-2">{extras.join(' · ')}</p>}
     </button>
   )
 }
@@ -136,10 +135,10 @@ function Linha({ rotulo, valores }: { rotulo: string; valores: string[] }) {
   if (valores.length === 0) return null
   return (
     <div className="flex gap-2">
-      <dt className="w-20 shrink-0 text-stone-500">{rotulo}</dt>
+      <dt className="w-20 shrink-0 text-rotulo-2">{rotulo}</dt>
       <dd className="flex flex-wrap gap-1">
         {valores.map((valor) => (
-          <span key={valor} className="rounded bg-stone-100 px-1.5 py-0.5 text-stone-700">
+          <span key={valor} className="rounded-md bg-fundo px-1.5 py-0.5 font-medium shadow-cartao">
             {valor}
           </span>
         ))}

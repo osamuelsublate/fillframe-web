@@ -1,10 +1,10 @@
 # Plano de construção: FillFrame
 
 ## Onde estamos
-Fase ativa: 6
-Onda ativa: nenhuma (primeira versão concluída)
-Última onda concluída: 6.2
-Atualizado em: 2026-09-24
+Fase ativa: 7
+Onda ativa: nenhuma (visual estilo Apple concluído)
+Última onda concluída: 7.3
+Atualizado em: 2026-10-12
 
 ## Fases
 | Fase | Nome | O que a pessoa consegue fazer ao final | Status | Ondas |
@@ -15,8 +15,9 @@ Atualizado em: 2026-09-24
 | 4 | Referências e áudio | Anexar imagens, textos e áudio no chat, usar referências nas criações e transformar uma imagem gerada em vídeo | concluída | 4.1, 4.2, 4.3 |
 | 5 | Versões, galeria e organização | Criar e navegar entre versões, usar a Galeria, renomear e apagar sessões, criações e referências | concluída | 5.1, 5.2, 5.3, 5.4 |
 | 6 | Fechamento | Usar no dia a dia com mensagens de erro claras, tela revisada e segurança conferida | concluída | 6.1, 6.2 |
+| 7 | Visual no estilo Apple | Usar o FillFrame com cara de app da Apple no Mac, no modo claro e no escuro | concluída | 7.1, 7.2, 7.3 |
 
-Total: 6 fases, 18 ondas.
+Total: 7 fases, 21 ondas.
 
 ## Ordem das ondas e dependências
 | Onda | Depende de |
@@ -39,6 +40,9 @@ Total: 6 fases, 18 ondas.
 | 5.4 | 5.1, 4.2 |
 | 6.1 | 3.5, 4.3, 5.2, 5.3, 5.4 |
 | 6.2 | 6.1 |
+| 7.1 | 6.2 |
+| 7.2 | 7.1 |
+| 7.3 | 7.2 |
 
 ## Como atualizar este arquivo
 Ao concluir uma onda:
@@ -57,3 +61,4 @@ Nunca pular uma onda. Nunca iniciar uma onda cujas dependências não estejam co
 - [fase4_referencias.md](fase4_referencias.md)
 - [fase5_versoes_galeria.md](fase5_versoes_galeria.md)
 - [fase6_fechamento.md](fase6_fechamento.md)
+- [fase7_visual_apple.md](fase7_visual_apple.md)

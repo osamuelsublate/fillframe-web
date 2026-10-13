@@ -3,6 +3,7 @@ import type { Referencia } from '../api/referencias'
 import type { SessaoCompleta } from '../api/sessoes'
 import AbaCriacao from './AbaCriacao'
 import AbaGaleria from './AbaGaleria'
+import Segmentado from './Segmentado'
 
 type Aba = 'criacao' | 'galeria'
 
@@ -28,21 +29,22 @@ export default function Painel({ sessao, destaque, aoMandarParaChat, cabecalho }
   }
 
   return (
-    <aside className="relative flex w-[min(28rem,45vw)] shrink-0 flex-col border-l border-stone-200 bg-white">
-      <div className="flex h-12 items-center justify-between border-b border-stone-200 px-3">
-        <div className="flex gap-1 text-sm">
-          <BotaoAba ativa={aba === 'criacao'} aoClicar={() => setAba('criacao')}>
-            Criação
-          </BotaoAba>
-          <BotaoAba ativa={aba === 'galeria'} aoClicar={() => setAba('galeria')}>
-            Galeria
-          </BotaoAba>
-        </div>
+    <aside className="relative flex w-[min(28rem,45vw)] shrink-0 flex-col border-l border-separador bg-agrupado">
+      <div className="flex h-13 shrink-0 items-center justify-between gap-2 border-b border-separador bg-fundo px-3">
+        <Segmentado
+          nome="Abas do painel"
+          valor={aba}
+          aoMudar={setAba}
+          opcoes={[
+            { valor: 'criacao', rotulo: 'Criação' },
+            { valor: 'galeria', rotulo: 'Galeria' },
+          ]}
+        />
         {cabecalho}
       </div>
 
       {!sessao ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-stone-500">Carregando…</div>
+        <div className="flex flex-1 items-center justify-center text-rotulo-2">Carregando…</div>
       ) : aba === 'criacao' ? (
         // key: ao trocar de sessão, a aba volta para a lista.
         <AbaCriacao key={sessao.id} sessao={sessao} destaque={destaque} />
@@ -50,27 +52,5 @@ export default function Painel({ sessao, destaque, aoMandarParaChat, cabecalho }
         <AbaGaleria key={sessao.id} sessao={sessao} aoMandarParaChat={aoMandarParaChat} />
       )}
     </aside>
-  )
-}
-
-function BotaoAba({
-  ativa,
-  aoClicar,
-  children,
-}: {
-  ativa: boolean
-  aoClicar: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={aoClicar}
-      className={`rounded-md px-2.5 py-1 ${
-        ativa ? 'bg-stone-100 font-medium text-stone-900' : 'text-stone-500 hover:text-stone-900'
-      }`}
-    >
-      {children}
-    </button>
   )
 }

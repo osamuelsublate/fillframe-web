@@ -91,12 +91,12 @@ export default function Sessao() {
           type="button"
           aria-label="Fechar histórico"
           onClick={() => setHistoricoAberto(false)}
-          className="fixed inset-0 z-30 bg-black/20 lg:hidden"
+          className="fixed inset-0 z-30 bg-veu lg:hidden"
         />
       )}
       {historicoAberto && (
-        <aside className="fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-stone-200 bg-stone-100 shadow-xl lg:static lg:z-auto lg:shadow-none">
-          <div className="flex h-12 items-center justify-between px-3">
+        <aside className="fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-separador bg-lateral shadow-flutuante lg:static lg:z-auto lg:shadow-none">
+          <div className="flex h-13 shrink-0 items-center justify-between pr-2 pl-4.5">
             <span className="font-semibold tracking-tight">FillFrame</span>
             <BotaoIcone titulo="Fechar histórico" aoClicar={() => setHistoricoAberto(false)}>
               <IconeLateral className="h-5 w-5" />
@@ -123,14 +123,14 @@ export default function Sessao() {
       )}
 
       <main className="relative flex min-w-0 flex-1 flex-col">
-        <header className="flex h-12 items-center justify-between border-b border-stone-200 px-3">
+        <header className="flex h-13 shrink-0 items-center justify-between gap-3 border-b border-separador px-3">
           <div className="flex min-w-0 items-center gap-2">
             {!historicoAberto && (
               <BotaoIcone titulo="Abrir histórico" aoClicar={() => setHistoricoAberto(true)}>
                 <IconeLateral className="h-5 w-5" />
               </BotaoIcone>
             )}
-            <span className="truncate text-sm text-stone-600">{sessao.data?.nome ?? ''}</span>
+            <h1 className="truncate font-semibold">{sessao.data?.nome ?? ''}</h1>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {sessao.data && <SeletorLlm key={sessao.data.id} sessao={sessao.data} />}
@@ -145,7 +145,7 @@ export default function Sessao() {
         {aviso && (
           <div
             role="alert"
-            className="absolute top-14 left-1/2 z-10 max-w-[90%] -translate-x-1/2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800 shadow-sm"
+            className="surgir absolute top-15 left-1/2 z-10 max-w-[90%] -translate-x-1/2 rounded-xl bg-elevado px-4 py-2.5 text-vermelho-texto shadow-flutuante"
           >
             {aviso}
           </div>
@@ -191,7 +191,7 @@ function AreaChat({ sessao, anexoExterno, aoRevisarCriacao }: PropsAreaChat) {
   const status = useStatus()
 
   if (status.isPending) {
-    return <div className="flex h-full items-center justify-center text-sm text-stone-500">Carregando…</div>
+    return <div className="flex h-full items-center justify-center text-rotulo-2">Carregando…</div>
   }
 
   if (status.isError) {
@@ -208,7 +208,7 @@ function AreaChat({ sessao, anexoExterno, aoRevisarCriacao }: PropsAreaChat) {
   }
 
   if (!sessao) {
-    return <div className="flex h-full items-center justify-center text-sm text-stone-500">Carregando…</div>
+    return <div className="flex h-full items-center justify-center text-rotulo-2">Carregando…</div>
   }
 
   // key: ao trocar de sessão, o chat começa do zero (rascunho e resposta em andamento).
@@ -230,7 +230,7 @@ function BotaoIcone({ titulo, aoClicar, children }: PropsBotaoIcone) {
       title={titulo}
       aria-label={titulo}
       onClick={aoClicar}
-      className="rounded-md p-1.5 text-stone-500 hover:bg-stone-200 hover:text-stone-900"
+      className="apertar rounded-md p-1.5 text-rotulo-2 hover:bg-preenchimento-2 hover:text-rotulo"
     >
       {children}
     </button>

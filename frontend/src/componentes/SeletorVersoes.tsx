@@ -24,12 +24,12 @@ export default function SeletorVersoes({ versoes, selecionadaId, aoSelecionar }:
             disabled={apagada}
             aria-pressed={ativa}
             title={apagada ? 'Versão apagada' : `Ver a v${versao.numero_versao}`}
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+            className={`apertar rounded-full px-2.5 py-0.5 text-nota font-semibold ${
               ativa
-                ? 'bg-stone-900 text-white'
+                ? 'bg-azul text-white'
                 : apagada
-                  ? 'bg-stone-50 text-stone-400'
-                  : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                  ? 'bg-preenchimento-3 text-rotulo-3 line-through'
+                  : 'bg-preenchimento-2 text-rotulo-2 hover:bg-preenchimento hover:text-rotulo'
             }`}
           >
             v{versao.numero_versao}
@@ -37,7 +37,7 @@ export default function SeletorVersoes({ versoes, selecionadaId, aoSelecionar }:
           </button>
         )
       })}
-      {origem && <span className="ml-1 text-xs text-stone-500">partiu de v{origem.numero_versao}</span>}
+      {origem && <span className="ml-1 text-nota text-rotulo-2">partiu de v{origem.numero_versao}</span>}
     </div>
   )
 }

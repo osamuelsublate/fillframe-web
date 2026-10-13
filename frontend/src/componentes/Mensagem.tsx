@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { IconeAlerta, IconeDocumento, IconeVarinha } from './Icones'
 
 export type Anexo = {
   id: string
@@ -30,22 +31,24 @@ export default function Mensagem({
 }: Props) {
   if (autor === 'usuario') {
     return (
-      <div className="flex flex-col items-end gap-1.5">
+      <div className="surgir flex flex-col items-end gap-1.5">
         {anexos.length > 0 && <ListaAnexos anexos={anexos} />}
         {audioUrl && (
-          <div className="w-80 max-w-[85%] space-y-1.5 rounded-2xl bg-stone-200 px-3 py-2.5">
+          <div className="w-80 max-w-[85%] space-y-1.5 rounded-[20px] rounded-br-md bg-preenchimento-2 px-3 py-2.5">
             <audio src={audioUrl} controls preload="metadata" className="h-9 w-full" />
-            {transcrevendo && <p className="animate-pulse px-1 text-xs text-stone-500">Transcrevendo…</p>}
+            {transcrevendo && <p className="animate-pulse px-1 text-nota text-rotulo-2">Transcrevendo…</p>}
             {transcricao && (
-              <details className="px-1 text-sm">
-                <summary className="cursor-pointer text-xs text-stone-600 select-none">Texto transcrito</summary>
-                <p className="mt-1 whitespace-pre-wrap text-stone-800">{transcricao}</p>
+              <details className="px-1">
+                <summary className="cursor-pointer text-nota text-rotulo-2 select-none">Texto transcrito</summary>
+                <p className="mt-1 text-corpo whitespace-pre-wrap">{transcricao}</p>
               </details>
             )}
           </div>
         )}
         {texto && (
-          <div className="max-w-[85%] rounded-2xl bg-stone-200 px-4 py-2.5 whitespace-pre-wrap">{texto}</div>
+          <div className="max-w-[80%] rounded-[20px] rounded-br-md bg-azul px-4 py-2 text-corpo whitespace-pre-wrap text-white">
+            {texto}
+          </div>
         )}
       </div>
     )
@@ -53,16 +56,31 @@ export default function Mensagem({
 
   if (erro) {
     return (
-      <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800">
-        {texto}
+      <div role="alert" className="surgir flex items-start gap-2.5 rounded-xl bg-vermelho/10 px-4 py-3 text-vermelho-texto">
+        <IconeAlerta className="mt-0.5 h-4.5 w-4.5 shrink-0" />
+        <span className="text-corpo">{texto}</span>
       </div>
     )
   }
 
   return (
-    <div className="space-y-3 leading-relaxed">
+    <div className="space-y-3 text-corpo">
       <Markdown texto={texto} />
-      {digitando && <span className="inline-block h-4 w-2 animate-pulse bg-stone-400 align-middle" />}
+      {digitando && <span className="inline-block h-4 w-0.5 animate-pulse rounded-full bg-azul align-middle" />}
+    </div>
+  )
+}
+
+// Os três pontinhos do iMessage enquanto a LLM pensa.
+export function Digitando({ texto }: { texto: string }) {
+  return (
+    <div className="surgir flex items-center gap-2.5" role="status">
+      <span className="flex items-center gap-1 rounded-[20px] rounded-bl-md bg-preenchimento-2 px-3.5 py-3" aria-hidden>
+        <span className="h-2 w-2 animate-bounce rounded-full bg-rotulo-3 [animation-delay:-0.3s]" />
+        <span className="h-2 w-2 animate-bounce rounded-full bg-rotulo-3 [animation-delay:-0.15s]" />
+        <span className="h-2 w-2 animate-bounce rounded-full bg-rotulo-3" />
+      </span>
+      <span className="text-nota text-rotulo-2">{texto}</span>
     </div>
   )
 }
@@ -72,8 +90,12 @@ export function ListaAnexos({ anexos }: { anexos: Anexo[] }) {
     <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5">
       {anexos.map((anexo) =>
         anexo.tipo === 'imagem' && anexo.url ? (
-          <a key={anexo.id} href={anexo.url} target="_blank" rel="noopener noreferrer" title={anexo.nome}>
-            <img src={anexo.url} alt={anexo.nome} className="h-24 w-24 rounded-lg border border-stone-200 object-cover" />
+          <a key={anexo.id} href={anexo.url} target="_blank" rel="noopener noreferrer" title={anexo.nome} className="rounded-2xl">
+            <img
+              src={anexo.url}
+              alt={anexo.nome}
+              className="h-28 w-28 rounded-2xl object-cover shadow-cartao transition-transform duration-200 ease-apple hover:scale-[1.02]"
+            />
           </a>
         ) : (
           <a
@@ -81,9 +103,9 @@ export function ListaAnexos({ anexos }: { anexos: Anexo[] }) {
             href={anexo.url ?? undefined}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs text-stone-700"
+            className="flex items-center gap-2 rounded-xl bg-preenchimento-3 px-3 py-2 hover:bg-preenchimento-2"
           >
-            <span aria-hidden>📄</span>
+            <IconeDocumento className="h-4.5 w-4.5 text-azul" />
             <span className="max-w-40 truncate">{anexo.nome}</span>
           </a>
         ),
@@ -105,17 +127,24 @@ export function AvisoRascunho({ acao, prompt, aoRevisar }: PropsAviso) {
     <button
       type="button"
       onClick={aoRevisar}
-      className="flex w-full items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-left text-sm hover:border-stone-400"
+      className="apertar group flex w-full items-center gap-3 rounded-xl bg-superficie px-3 py-2.5 text-left shadow-cartao hover:bg-preenchimento-3"
     >
-      <span className="shrink-0 font-medium">
-        {acao === 'criacao_preparada'
-          ? 'Rascunho preparado:'
-          : acao === 'versao_criada'
-            ? 'Nova versão preparada:'
-            : 'Rascunho ajustado:'}
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-azul/12 text-azul">
+        <IconeVarinha className="h-4.5 w-4.5" />
       </span>
-      <span className="min-w-0 flex-1 truncate text-stone-600">{resumo}</span>
-      <span className="shrink-0 font-medium text-stone-900">→ revisar</span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-semibold">
+          {acao === 'criacao_preparada'
+            ? 'Rascunho preparado'
+            : acao === 'versao_criada'
+              ? 'Nova versão preparada'
+              : 'Rascunho ajustado'}
+        </span>
+        <span className="block truncate text-nota text-rotulo-2">{resumo}</span>
+      </span>
+      <span className="shrink-0 rounded-full bg-azul/12 px-3 py-1 font-semibold text-azul group-hover:bg-azul group-hover:text-white">
+        Revisar
+      </span>
     </button>
   )
 }
@@ -135,7 +164,7 @@ function Markdown({ texto }: { texto: string }) {
       while (i < linhas.length && !linhas[i].trim().startsWith('```')) codigo.push(linhas[i++])
       i++
       blocos.push(
-        <pre key={blocos.length} className="overflow-x-auto rounded-lg bg-stone-900 p-3 text-sm text-stone-100">
+        <pre key={blocos.length} className="overflow-x-auto rounded-xl bg-preenchimento-3 p-3.5 font-mono text-nota">
           <code>{codigo.join('\n')}</code>
         </pre>,
       )
@@ -147,7 +176,7 @@ function Markdown({ texto }: { texto: string }) {
       const citacao: string[] = []
       while (i < linhas.length && /^\s*>/.test(linhas[i])) citacao.push(linhas[i++].replace(/^\s*>\s?/, ''))
       blocos.push(
-        <blockquote key={blocos.length} className="space-y-2 border-l-2 border-stone-300 pl-3 text-stone-700">
+        <blockquote key={blocos.length} className="space-y-2 border-l-[3px] border-preenchimento pl-3 text-rotulo-2">
           <Markdown texto={citacao.join('\n')} />
         </blockquote>,
       )
@@ -156,9 +185,9 @@ function Markdown({ texto }: { texto: string }) {
 
     const titulo = linha.match(/^(#{1,4})\s+(.*)/)
     if (titulo) {
-      const tamanho = titulo[1].length <= 2 ? 'text-lg' : 'text-base'
+      const tamanho = titulo[1].length <= 2 ? 'text-titulo' : 'text-corpo'
       blocos.push(
-        <p key={blocos.length} className={`${tamanho} font-semibold`}>
+        <p key={blocos.length} className={`${tamanho} pt-1 font-semibold tracking-tight`}>
           {inline(titulo[2])}
         </p>,
       )
@@ -175,7 +204,7 @@ function Markdown({ texto }: { texto: string }) {
       }
       const Lista = ordenada ? 'ol' : 'ul'
       blocos.push(
-        <Lista key={blocos.length} className={`space-y-1 pl-5 ${ordenada ? 'list-decimal' : 'list-disc'}`}>
+        <Lista key={blocos.length} className={`space-y-1 pl-5 marker:text-rotulo-3 ${ordenada ? 'list-decimal' : 'list-disc'}`}>
           {itens.map((item, n) => (
             <li key={n}>{inline(item)}</li>
           ))}
@@ -185,7 +214,7 @@ function Markdown({ texto }: { texto: string }) {
     }
 
     if (/^\s*(---|\*\*\*)\s*$/.test(linha)) {
-      blocos.push(<hr key={blocos.length} className="border-stone-200" />)
+      blocos.push(<hr key={blocos.length} className="border-separador" />)
       i++
       continue
     }
@@ -224,7 +253,7 @@ function inline(texto: string): ReactNode[] {
     const chave = partes.length
     if (trecho.startsWith('`')) {
       partes.push(
-        <code key={chave} className="rounded bg-stone-100 px-1 py-0.5 text-[0.9em]">
+        <code key={chave} className="rounded-md bg-preenchimento-3 px-1.5 py-0.5 font-mono text-[0.85em]">
           {trecho.slice(1, -1)}
         </code>,
       )
@@ -233,7 +262,7 @@ function inline(texto: string): ReactNode[] {
     } else if (trecho.startsWith('[')) {
       const [, rotulo, url] = trecho.match(/^\[([^\]]+)\]\(([^)]+)\)$/) ?? []
       partes.push(
-        <a key={chave} href={url} target="_blank" rel="noopener noreferrer" className="underline">
+        <a key={chave} href={url} target="_blank" rel="noopener noreferrer" className="text-azul hover:underline">
           {rotulo}
         </a>,
       )

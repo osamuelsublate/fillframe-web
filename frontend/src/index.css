@@ -1,4 +1,135 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+/*
+ * Visual no estilo Apple (spec/telas.md, "Visual").
+ * Toda cor do app vem daqui: os componentes usam só os nomes do @theme abaixo
+ * (bg-fundo, text-rotulo-2, border-separador, bg-azul…), nunca uma cor solta.
+ */
+
+:root {
+  /* Cores de sistema da Apple */
+  --ff-azul: #0071e3; /* azul da Apple na web: texto branco em cima passa no contraste AA */
+  --ff-azul-forte: #0062c4; /* passar o mouse / apertar */
+  --ff-vermelho: #ff3b30;
+  --ff-vermelho-texto: #d70015; /* vermelho legível em texto pequeno (contraste AA) */
+  --ff-verde: #34c759;
+  --ff-verde-texto: #248a3d;
+  --ff-laranja: #ff9500;
+  --ff-laranja-texto: #c93400;
+
+  /* Textos */
+  --ff-rotulo: #1d1d1f;
+  --ff-rotulo-2: rgb(60 60 67 / 0.78);
+  --ff-rotulo-3: rgb(60 60 67 / 0.56);
+  --ff-rotulo-4: rgb(60 60 67 / 0.3);
+
+  /* Fundos */
+  --ff-fundo: #ffffff; /* área principal (chat e painel) */
+  --ff-lateral: #f5f5f7; /* barra lateral do histórico */
+  --ff-agrupado: #f2f2f7; /* fundo atrás de cartões agrupados */
+  --ff-superficie: #ffffff; /* cartões */
+  --ff-elevado: #ffffff; /* menus, alertas e avisos que flutuam */
+
+  /* Preenchimentos finos (passar o mouse, trilho do controle segmentado, campos) */
+  --ff-preenchimento: rgb(120 120 128 / 0.2);
+  --ff-preenchimento-2: rgb(120 120 128 / 0.12);
+  --ff-preenchimento-3: rgb(120 120 128 / 0.08);
+
+  --ff-separador: rgb(0 0 0 / 0.1);
+  --ff-veu: rgb(0 0 0 / 0.25); /* atrás de alertas */
+
+  --ff-sombra-cartao: 0 1px 2px rgb(0 0 0 / 0.06), 0 0 0 0.5px rgb(0 0 0 / 0.06);
+  --ff-sombra-flutuante: 0 10px 30px rgb(0 0 0 / 0.14), 0 0 0 0.5px rgb(0 0 0 / 0.1);
+
+  color-scheme: light;
+}
+
+/* Modo escuro: segue a configuração do computador. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ff-azul: #0a84ff;
+    --ff-azul-forte: #409cff;
+    --ff-vermelho: #ff453a;
+    --ff-vermelho-texto: #ff6961;
+    --ff-verde: #30d158;
+    --ff-verde-texto: #30d158;
+    --ff-laranja: #ff9f0a;
+    --ff-laranja-texto: #ffb340;
+
+    --ff-rotulo: #f5f5f7;
+    --ff-rotulo-2: rgb(235 235 245 / 0.72);
+    --ff-rotulo-3: rgb(235 235 245 / 0.5);
+    --ff-rotulo-4: rgb(235 235 245 / 0.25);
+
+    --ff-fundo: #1c1c1e;
+    --ff-lateral: #232325;
+    --ff-agrupado: #111113;
+    --ff-superficie: #2c2c2e;
+    --ff-elevado: #2c2c2e;
+
+    --ff-preenchimento: rgb(120 120 128 / 0.36);
+    --ff-preenchimento-2: rgb(120 120 128 / 0.24);
+    --ff-preenchimento-3: rgb(120 120 128 / 0.16);
+
+    --ff-separador: rgb(255 255 255 / 0.1);
+    --ff-veu: rgb(0 0 0 / 0.5);
+
+    --ff-sombra-cartao: 0 0 0 0.5px rgb(255 255 255 / 0.08);
+    --ff-sombra-flutuante: 0 10px 30px rgb(0 0 0 / 0.5), 0 0 0 0.5px rgb(255 255 255 / 0.12);
+
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter Variable", "Helvetica Neue", sans-serif;
+
+  --color-azul: var(--ff-azul);
+  --color-azul-forte: var(--ff-azul-forte);
+  --color-vermelho: var(--ff-vermelho);
+  --color-vermelho-texto: var(--ff-vermelho-texto);
+  --color-verde: var(--ff-verde);
+  --color-verde-texto: var(--ff-verde-texto);
+  --color-laranja: var(--ff-laranja);
+  --color-laranja-texto: var(--ff-laranja-texto);
+
+  --color-rotulo: var(--ff-rotulo);
+  --color-rotulo-2: var(--ff-rotulo-2);
+  --color-rotulo-3: var(--ff-rotulo-3);
+  --color-rotulo-4: var(--ff-rotulo-4);
+
+  --color-fundo: var(--ff-fundo);
+  --color-lateral: var(--ff-lateral);
+  --color-agrupado: var(--ff-agrupado);
+  --color-superficie: var(--ff-superficie);
+  --color-elevado: var(--ff-elevado);
+
+  --color-preenchimento: var(--ff-preenchimento);
+  --color-preenchimento-2: var(--ff-preenchimento-2);
+  --color-preenchimento-3: var(--ff-preenchimento-3);
+
+  --color-separador: var(--ff-separador);
+  --color-veu: var(--ff-veu);
+
+  --shadow-cartao: var(--ff-sombra-cartao);
+  --shadow-flutuante: var(--ff-sombra-flutuante);
+
+  /* Tamanhos de texto de Mac */
+  --text-mini: 11px;
+  --text-mini--line-height: 14px;
+  --text-nota: 12px;
+  --text-nota--line-height: 16px;
+  --text-ui: 13px;
+  --text-ui--line-height: 18px;
+  --text-corpo: 15px;
+  --text-corpo--line-height: 22px;
+  --text-titulo: 17px;
+  --text-titulo--line-height: 22px;
+
+  /* Curva preferida da Apple */
+  --ease-apple: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
 
 html,
 body,
@@ -7,5 +138,56 @@ body,
 }
 
 body {
-  @apply bg-stone-50 text-stone-900 antialiased;
+  @apply bg-fundo font-sans text-ui text-rotulo antialiased;
+  font-feature-settings: "cv11"; /* Inter: "a" de um andar, mais parecido com a SF */
+}
+
+@layer base {
+  /* Anel de foco azul em tudo que recebe o teclado. */
+  :focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--ff-azul) 50%, transparent);
+    outline-offset: 1px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--ff-azul) 25%, transparent);
+  }
+
+  /* Barra de rolagem fina, como no Mac. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ff-rotulo-4) transparent;
+  }
+}
+
+/* Botão apertado afunda de leve. */
+@utility apertar {
+  transition:
+    transform 100ms var(--ease-apple),
+    background-color 150ms var(--ease-apple),
+    color 150ms var(--ease-apple);
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+
+@utility surgir {
+  animation: surgir 200ms var(--ease-apple);
+}
+
+/* Quem pediu "reduzir movimento" no sistema não vê animação. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

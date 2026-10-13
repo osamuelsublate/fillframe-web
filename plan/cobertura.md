@@ -12,6 +12,9 @@ Conferida em 2026-09-24 contra spec/visao.md, spec/usuarios.md, spec/telas.md, s
 | Área: Painel, aba Criação | 2.1 (painel + seletor de modelos) | 3.1, 3.2, 3.3, 3.4, 3.5, 4.1, 4.2, 5.1, 5.4 |
 | Área: Painel, aba Galeria | 5.2 (a aba vazia existe desde 2.1) | 5.4 |
 | Fluxo de primeiro acesso | 1.1 (aviso de chave), 1.2 (sessão nova) | 2.2 (pergunta inicial) |
+| Visual no estilo Apple (base, moldura, histórico, avisos) | 7.1 | 7.3 (modo escuro) |
+| Visual no estilo Apple: Chat | 7.2 | 7.3 (modo escuro) |
+| Visual no estilo Apple: Painel (Criação e Galeria) | 7.3 | – |
 
 ## Operações da API (spec/arquitetura.md, seção 6)
 
@@ -107,6 +110,7 @@ Conferida em 2026-09-24 contra spec/visao.md, spec/usuarios.md, spec/telas.md, s
 
 ## Conferência
 - Toda tela e área tem uma onda de criação: ok.
+- Toda área tem uma onda que aplica o visual da Apple (spec/telas.md, "Visual", 2026-10-12): ok.
 - Toda operação da API está em exatamente uma onda (as ampliações posteriores são refinamentos da mesma operação): ok.
 - Toda entidade é criada em exatamente uma onda: ok.
 - Toda regra de negócio aparece em pelo menos uma tarefa: ok.

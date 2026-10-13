@@ -11,6 +11,8 @@ import {
 import { useModelos, type ModeloMidia, type TipoMidia } from '../api/modelos'
 import type { Referencia } from '../api/referencias'
 import { proporcaoPara } from '../utils/proporcao'
+import { IconeSetas, IconeVoltar } from './Icones'
+import Segmentado from './Segmentado'
 import SeletorModelo, { CartaoModelo } from './SeletorModelo'
 
 // Valores iniciais de uma criação nova (ex.: "Usar como referência" abre um vídeo com a imagem no 1º quadro).
@@ -157,11 +159,16 @@ export default function ConfigCriacao({
 
   return (
     <form onSubmit={aoSalvar} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-2 border-b border-stone-200 px-3 py-2">
-        <button type="button" onClick={aoFechar} className="text-sm text-stone-600 hover:text-stone-900">
-          ← Criações
+      <div className="relative flex h-11 shrink-0 items-center justify-center border-b border-separador bg-fundo px-24">
+        <button
+          type="button"
+          onClick={aoFechar}
+          className="apertar absolute left-1.5 flex items-center gap-0.5 rounded-md py-1 pr-2 pl-0.5 font-medium text-azul hover:bg-azul/10"
+        >
+          <IconeVoltar className="h-4.5 w-4.5" />
+          Criações
         </button>
-        <span className="text-sm font-medium">
+        <span className="font-semibold">
           {somenteLeitura
             ? `Configuração da v${criacao.numero_versao}`
             : criacao
@@ -170,16 +177,17 @@ export default function ConfigCriacao({
         </span>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
         {somenteLeitura && (
-          <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <p className="rounded-xl bg-laranja/12 px-3 py-2 text-laranja-texto">
             Versões prontas não mudam. Crie uma nova versão.
           </p>
         )}
         {/* Numa versão já gerada, todos os campos ficam travados. */}
-        <fieldset disabled={somenteLeitura} className="min-w-0 space-y-5 disabled:opacity-70">
+        <fieldset disabled={somenteLeitura} className="min-w-0 space-y-4 disabled:opacity-70">
           <Campo rotulo="Tipo">
-            <Alternador
+            <Segmentado<TipoMidia>
+              nome="Tipo"
               opcoes={[
                 { valor: 'imagem', rotulo: 'Imagem' },
                 { valor: 'video', rotulo: 'Vídeo' },
@@ -187,7 +195,7 @@ export default function ConfigCriacao({
               valor={tipo}
               aoMudar={(novo) => {
                 if (novo === tipo) return
-                setTipo(novo as TipoMidia)
+                setTipo(novo)
                 setModeloId(null)
                 setTrocandoModelo(true)
                 setResolucao(null)
@@ -205,13 +213,13 @@ export default function ConfigCriacao({
                 <button
                   type="button"
                   onClick={() => setTrocandoModelo(true)}
-                  className="text-xs text-stone-600 underline hover:text-stone-900"
+                  className="apertar rounded-md px-1 font-medium text-azul hover:bg-azul/10"
                 >
                   Trocar modelo
                 </button>
               </div>
             ) : (
-                <div className="overflow-hidden rounded-lg border border-stone-200">
+                <div className="-m-3 overflow-hidden rounded-xl">
                   <SeletorModelo
                     tipo={tipo}
                     modeloId={modeloId}
@@ -241,27 +249,28 @@ export default function ConfigCriacao({
                   ? 'Descreva o vídeo: o que aparece, o movimento, a câmera, o estilo…'
                   : 'Descreva a imagem: o que aparece, estilo, textos na tela…'
               }
-              className="w-full resize-y rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none focus:border-stone-500"
+              className="w-full rounded-lg bg-preenchimento-3 px-3 py-2 placeholder:text-rotulo-3 hover:bg-preenchimento-2 resize-y leading-relaxed"
             />
           </Campo>
 
           <Campo rotulo="Formato" erro={erroDo('orientacao') ?? erroDo('proporcao')}>
-            <Alternador
+            <Segmentado<Orientacao>
+              nome="Formato"
               opcoes={[
                 { valor: 'vertical', rotulo: 'Vertical' },
                 { valor: 'horizontal', rotulo: 'Horizontal' },
               ]}
               valor={orientacao}
-              aoMudar={(novo) => setOrientacao(novo as Orientacao)}
+              aoMudar={setOrientacao}
             />
             {orientacaoDoQuadro && orientacaoDoQuadro !== orientacao && (
-              <p className="mt-1.5 rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
+              <p className="mt-2 rounded-lg bg-laranja/12 px-2.5 py-1.5 text-nota text-laranja-texto">
                 A imagem do primeiro quadro é {orientacaoDoQuadro} e o vídeo está {orientacao}: o vídeo vai ter faixas
                 pretas. Use {orientacaoDoQuadro} para ocupar a tela toda.
               </p>
             )}
             {modelo && (
-              <p className="mt-1.5 text-xs text-stone-500">
+              <p className="mt-2 text-nota text-rotulo-2">
                 {proporcao
                   ? `Proporção usada: ${proporcao}`
                   : modelo.capacidades.proporcoes.length
@@ -273,33 +282,35 @@ export default function ConfigCriacao({
 
           {ehVideo && (
             <Campo rotulo="Duração" erro={erroDo('duracao')}>
-              <select
-                value={duracao ?? ''}
-                onChange={(evento) => setDuracao(evento.target.value ? Number(evento.target.value) : null)}
-                aria-label="Duração"
-                className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-stone-500"
-              >
-                <option value="">Escolha a duração</option>
-                {duracao !== null && !duracoes.includes(duracao) && (
-                  <option value={duracao}>{duracao} s (não aceita por este modelo)</option>
-                )}
-                {duracoes.map((opcao) => (
-                  <option key={opcao} value={opcao}>
-                    {opcao} segundos
-                  </option>
-                ))}
-              </select>
+              <ComSetas>
+                <select
+                  value={duracao ?? ''}
+                  onChange={(evento) => setDuracao(evento.target.value ? Number(evento.target.value) : null)}
+                  aria-label="Duração"
+                  className="w-full appearance-none rounded-lg bg-preenchimento-3 py-2 pr-8 pl-3 hover:bg-preenchimento-2"
+                >
+                  <option value="">Escolha a duração</option>
+                  {duracao !== null && !duracoes.includes(duracao) && (
+                    <option value={duracao}>{duracao} s (não aceita por este modelo)</option>
+                  )}
+                  {duracoes.map((opcao) => (
+                    <option key={opcao} value={opcao}>
+                      {opcao} segundos
+                    </option>
+                  ))}
+                </select>
+              </ComSetas>
             </Campo>
           )}
 
           {ehVideo && modelo?.capacidades.gera_audio && (
             <Campo rotulo="Áudio" erro={erroDo('audio')}>
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2.5">
                 <input
                   type="checkbox"
                   checked={comAudio}
                   onChange={(evento) => setComAudio(evento.target.checked)}
-                  className="h-4 w-4"
+                  className="h-4 w-4 accent-azul"
                 />
                 Gerar áudio junto com o vídeo (costuma custar mais)
               </label>
@@ -308,106 +319,114 @@ export default function ConfigCriacao({
 
           <Campo rotulo="Referências" erro={erroDo('referencias')}>
             {imagensDaSessao.length === 0 ? (
-              <p className="text-xs text-stone-500">
+              <p className="text-nota text-rotulo-2">
                 Nenhuma imagem na sessão. Anexe imagens no chat ou use "Usar como referência" numa imagem gerada.
               </p>
             ) : (
-              <ul className="space-y-1.5">
+              <ul className="divide-y divide-separador">
                 {imagensDaSessao.map((referencia) => {
                   const papel = papelDe(referencia.id)
                   // Papel escolhido que não está na lista: ainda sem modelo, ou o modelo não aceita.
                   const foraDaLista = papel !== null && !papeis.includes(papel)
                   const invalido = foraDaLista && modelo !== null
                   return (
-                    <li key={referencia.id} className="flex items-center gap-2">
+                    <li key={referencia.id} className="flex items-center gap-2.5 py-1.5 first:pt-0 last:pb-0">
                       <img
                         src={referencia.url}
                         alt={referencia.nome_original ?? 'Imagem de referência'}
-                        className="h-12 w-12 shrink-0 rounded-md border border-stone-200 object-cover"
+                        className="h-11 w-11 shrink-0 rounded-lg object-cover shadow-cartao"
                       />
-                      <span className="min-w-0 flex-1 truncate text-xs text-stone-600">
+                      <span className="min-w-0 flex-1 truncate text-nota text-rotulo-2">
                         {referencia.nome_original ?? 'imagem'}
                       </span>
-                      <select
-                        value={papel ?? ''}
-                        onChange={(evento) => mudarPapel(referencia.id, (evento.target.value || null) as Papel | null)}
-                        aria-label={`Uso de ${referencia.nome_original ?? 'imagem'}`}
-                        className={`rounded-md border bg-white px-2 py-1 text-xs outline-none ${
-                          invalido ? 'border-red-300 text-red-800' : 'border-stone-300'
-                        }`}
-                      >
-                        <option value="">Não usar</option>
-                        {foraDaLista && (
-                          <option value={papel}>
-                            {NOMES_PAPEL[papel]}
-                            {invalido ? ' (este modelo não aceita)' : ''}
-                          </option>
-                        )}
-                        {papeis.map((opcao) => (
-                          <option key={opcao} value={opcao}>
-                            {NOMES_PAPEL[opcao]}
-                          </option>
-                        ))}
-                      </select>
+                      <ComSetas pequeno>
+                        <select
+                          value={papel ?? ''}
+                          onChange={(evento) => mudarPapel(referencia.id, (evento.target.value || null) as Papel | null)}
+                          aria-label={`Uso de ${referencia.nome_original ?? 'imagem'}`}
+                          className={`appearance-none rounded-md py-1 pr-6 pl-2 text-nota font-medium ${
+                            invalido ? 'bg-vermelho/10 text-vermelho-texto' : 'bg-preenchimento-3 hover:bg-preenchimento-2'
+                          }`}
+                        >
+                          <option value="">Não usar</option>
+                          {foraDaLista && (
+                            <option value={papel}>
+                              {NOMES_PAPEL[papel]}
+                              {invalido ? ' (este modelo não aceita)' : ''}
+                            </option>
+                          )}
+                          {papeis.map((opcao) => (
+                            <option key={opcao} value={opcao}>
+                              {NOMES_PAPEL[opcao]}
+                            </option>
+                          ))}
+                        </select>
+                      </ComSetas>
                     </li>
                   )
                 })}
               </ul>
             )}
             {modelo && ehVideo && !modelo.capacidades.aceita_ultimo_quadro && (
-              <p className="mt-1.5 text-xs text-stone-500">Este modelo não aceita último quadro.</p>
+              <p className="mt-2 text-nota text-rotulo-2">Este modelo não aceita último quadro.</p>
             )}
             {modelo && ehVideo && !modelo.capacidades.aceita_primeiro_quadro && (
-              <p className="mt-1.5 text-xs text-stone-500">Este modelo não aceita primeiro quadro.</p>
+              <p className="mt-2 text-nota text-rotulo-2">Este modelo não aceita primeiro quadro.</p>
             )}
           </Campo>
 
           <Campo rotulo="Resolução" erro={erroDo('resolucao')}>
-            <select
-              value={resolucao ?? ''}
-              onChange={(evento) => setResolucao(evento.target.value || null)}
-              aria-label="Resolução"
-              className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-stone-500"
-            >
-              <option value="">Padrão do modelo</option>
-              {resolucao && !resolucoes.includes(resolucao) && (
-                <option value={resolucao}>{resolucao} (não aceita por este modelo)</option>
-              )}
-              {resolucoes.map((opcao) => (
-                <option key={opcao} value={opcao}>
-                  {opcao}
-                </option>
-              ))}
-            </select>
+            <ComSetas>
+              <select
+                value={resolucao ?? ''}
+                onChange={(evento) => setResolucao(evento.target.value || null)}
+                aria-label="Resolução"
+                className="w-full appearance-none rounded-lg bg-preenchimento-3 py-2 pr-8 pl-3 hover:bg-preenchimento-2"
+              >
+                <option value="">Padrão do modelo</option>
+                {resolucao && !resolucoes.includes(resolucao) && (
+                  <option value={resolucao}>{resolucao} (não aceita por este modelo)</option>
+                )}
+                {resolucoes.map((opcao) => (
+                  <option key={opcao} value={opcao}>
+                    {opcao}
+                  </option>
+                ))}
+              </select>
+            </ComSetas>
           </Campo>
 
           {gerar.isError && (
-            <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
+            <p role="alert" className="rounded-xl bg-vermelho/10 px-3 py-2 text-vermelho-texto">
               O rascunho foi salvo, mas não deu para gerar: {gerar.error.message}
             </p>
           )}
-          {erroGeral && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">{erroGeral}</p>}
+          {erroGeral && (
+            <p role="alert" className="rounded-xl bg-vermelho/10 px-3 py-2 text-vermelho-texto">
+              {erroGeral}
+            </p>
+          )}
         </fieldset>
       </div>
 
       {somenteLeitura ? (
-        <div className="border-t border-stone-200 p-3">
+        <div className="border-t border-separador bg-fundo p-3">
           <button
             type="button"
             onClick={() => aoNovaVersao?.(criacao.id)}
             disabled={!aoNovaVersao || criacao.situacao === 'apagado'}
-            className="w-full rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+            className="apertar h-9 w-full rounded-full bg-azul font-semibold text-white hover:bg-azul-forte disabled:cursor-not-allowed disabled:bg-preenchimento disabled:text-rotulo-3"
           >
             Nova versão a partir desta
           </button>
         </div>
       ) : (
-      <div className="flex gap-2 border-t border-stone-200 p-3">
+      <div className="flex gap-2 border-t border-separador bg-fundo p-3">
         <button
           type="submit"
           disabled={!modeloId || salvar.isPending || gerar.isPending}
           title={!modeloId ? 'Escolha um modelo primeiro' : undefined}
-          className="flex-1 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-400"
+          className="apertar h-9 flex-1 rounded-full bg-azul/12 font-semibold text-azul hover:bg-azul/20 disabled:cursor-not-allowed disabled:bg-preenchimento-3 disabled:text-rotulo-3"
         >
           {salvar.isPending && !gerarDepois ? 'Salvando…' : 'Salvar rascunho'}
         </button>
@@ -416,7 +435,7 @@ export default function ConfigCriacao({
           onClick={() => enviar(true)}
           disabled={!modeloId || salvar.isPending || gerar.isPending}
           title={!modeloId ? 'Escolha um modelo primeiro' : undefined}
-          className="flex-1 rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+          className="apertar h-9 flex-1 rounded-full bg-azul font-semibold text-white hover:bg-azul-forte disabled:cursor-not-allowed disabled:bg-preenchimento disabled:text-rotulo-3"
         >
           {gerarDepois && (salvar.isPending || gerar.isPending) ? 'Enviando…' : 'Salvar e gerar'}
         </button>
@@ -426,13 +445,14 @@ export default function ConfigCriacao({
   )
 }
 
+// Um grupo do formulário, no estilo dos Ajustes da Apple: rótulo em cima, cartão branco embaixo.
 function Campo({ rotulo, erro, children }: { rotulo: string; erro?: string | null; children: React.ReactNode }) {
   return (
     <div>
-      <p className="mb-1.5 text-xs font-medium tracking-wide text-stone-500 uppercase">{rotulo}</p>
-      {children}
+      <p className="mb-1.5 px-1 text-mini font-semibold text-rotulo-2">{rotulo}</p>
+      <div className="rounded-xl bg-superficie p-3 shadow-cartao">{children}</div>
       {erro && (
-        <p role="alert" className="mt-1.5 text-sm text-red-700">
+        <p role="alert" className="mt-1.5 px-1 text-nota text-vermelho-texto">
           {erro}
         </p>
       )}
@@ -440,26 +460,16 @@ function Campo({ rotulo, erro, children }: { rotulo: string; erro?: string | nul
   )
 }
 
-type Opcao = { valor: string; rotulo: string; desativado?: string }
-
-function Alternador({ opcoes, valor, aoMudar }: { opcoes: Opcao[]; valor: string; aoMudar: (valor: string) => void }) {
+// Setinhas de menu do Mac ao lado de um <select> sem a seta padrão do navegador.
+function ComSetas({ pequeno = false, children }: { pequeno?: boolean; children: React.ReactNode }) {
   return (
-    <div className="inline-flex rounded-lg bg-stone-100 p-0.5 text-sm">
-      {opcoes.map((opcao) => (
-        <button
-          key={opcao.valor}
-          type="button"
-          onClick={() => aoMudar(opcao.valor)}
-          disabled={!!opcao.desativado}
-          title={opcao.desativado}
-          aria-pressed={valor === opcao.valor}
-          className={`rounded-md px-3 py-1 disabled:cursor-not-allowed disabled:text-stone-400 ${
-            valor === opcao.valor ? 'bg-white font-medium shadow-sm' : 'text-stone-600 hover:text-stone-900'
-          }`}
-        >
-          {opcao.rotulo}
-        </button>
-      ))}
-    </div>
+    <span className={`relative ${pequeno ? 'inline-block shrink-0' : 'block'}`}>
+      {children}
+      <IconeSetas
+        className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-rotulo-2 ${
+          pequeno ? 'right-1.5 h-3 w-3' : 'right-2.5 h-3.5 w-3.5'
+        }`}
+      />
+    </span>
   )
 }

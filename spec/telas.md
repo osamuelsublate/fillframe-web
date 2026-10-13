@@ -6,7 +6,7 @@ Cada **sessão** representa um fluxo de trabalho: um **conteúdo** que ele vai g
 
 ## Telas da primeira versão
 
-O app tem **uma tela só**, no estilo do layout do Claude: um chat principal e, quando algo precisa ser visual, um painel que divide a mesma tela.
+O app tem **uma tela só**, no estilo do layout do Claude: um chat principal e, quando algo precisa ser visual, um painel que divide a mesma tela. O visual segue o estilo dos apps da Apple no Mac (ver "Visual").
 
 ### Tela única: Sessão
 
@@ -37,6 +37,25 @@ O app tem **uma tela só**, no estilo do layout do Claude: um chat principal e, 
   - Os brolls e as imagens da sessão atual, com filtro de imagem ou vídeo e de vertical ou horizontal.
   - Ações disponíveis: baixar, mandar de volta para o chat como referência, apagar.
   - *Assumido:* existe uma opção "todas as sessões" para ver tudo o que já foi gerado.
+
+## Visual
+
+Pedido em 2026-10-12: deixar o app com cara de app da Apple no Mac, seguindo as diretrizes de design da Apple (Human Interface Guidelines). O layout e as funções não mudam, só a aparência.
+
+- **Estilo:** limpo e calmo, como Notas, Mail ou Finder. O conteúdo (conversa e brolls) é o destaque; botões, bordas e fundos ficam discretos.
+- **Cores:** as cores de sistema da Apple. Azul para a ação principal (enviar, Gerar, item selecionado), vermelho só para apagar e erros, verde para "pronto", laranja para avisos. Cinzas da Apple para fundos, textos secundários e separadores.
+- **Modo claro e escuro:** segue a configuração do computador, sem botão para trocar (*assumido*).
+- **Fonte:** a fonte de sistema da Apple (SF Pro) quando existir no computador; nos outros (Linux, Windows), a Inter, que é a mais parecida e fica guardada no próprio app, sem buscar nada na internet.
+- **Tamanhos de Mac, não de celular:** textos de interface em 13 px, texto da conversa em 15 px, botões e campos com altura de 28 a 36 px. O app é só para computador (`spec/usuarios.md`).
+- **Formas:** cantos arredondados em todos os cartões, campos e botões; o botão principal tem formato de pílula. Espaçamentos em múltiplos de 4 px.
+- **Áreas:**
+  - Histórico: barra lateral cinza clara, como a do Finder, com a sessão aberta destacada.
+  - Chat: mensagens do usuário em balão azul à direita (como o iMessage), respostas da LLM em texto corrido, caixa de mensagem arredondada.
+  - Painel: abas Criação e Galeria num controle segmentado (os "botões grudados" da Apple), cartões brancos com cantos arredondados.
+  - Confirmações (apagar) no formato de alerta da Apple, com botões de verbo claro ("Apagar", "Cancelar").
+- **Fundos sólidos:** sem efeito de vidro ou desfoque (*assumido*: lê melhor e fica mais leve).
+- **Movimento:** transições curtas (0,1 a 0,3 s) ao passar o mouse, apertar e abrir. Quem desliga animações no sistema não vê movimento.
+- **Acessibilidade:** contraste de texto mínimo da norma WCAG AA, foco do teclado sempre visível (anel azul), ícones com nome para leitores de tela.
 
 ## Fluxo de primeiro acesso
 
