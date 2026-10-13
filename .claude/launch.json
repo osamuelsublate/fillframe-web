@@ -5,7 +5,7 @@
       "name": "backend",
       "runtimeExecutable": "bash",
       "runtimeArgs": ["-c", "cd backend && uv run fillframe"],
-      "port": 8000
+      "port": 8010
     },
     {
       "name": "frontend",

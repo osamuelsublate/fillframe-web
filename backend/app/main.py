@@ -25,7 +25,7 @@ from app.sessoes.rotas import rotas as rotas_sessoes
 from app.sistema.rotas import rotas as rotas_sistema
 
 HOST = "127.0.0.1"
-PORTA = 8000
+PORTA = 8010  # 8000 fica livre para outros projetos (o gw-chatbot usa)
 ORIGEM_FRONTEND = "http://127.0.0.1:5173"
 
 log = logging.getLogger("fillframe")

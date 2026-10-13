@@ -54,7 +54,8 @@ fillframe-web/
 ### Frontend
 
 - **React + TypeScript + Vite.** É a opção mais madura e documentada, e o mesmo código funciona no computador e no celular, caso isso seja preciso no futuro.
-- **Tailwind CSS** para o visual: layout de chat e painel dividido sem arquivos de estilo espalhados.
+- **Tailwind CSS** para o visual: layout de chat e painel dividido sem arquivos de estilo espalhados. As cores, fontes, raios e animações do estilo Apple (`spec/telas.md`, "Visual") ficam num lugar só, em `frontend/src/index.css`, como variáveis com versão clara e escura; os componentes usam só essas variáveis, nunca uma cor solta.
+- **Fonte Inter** pelo pacote `@fontsource-variable/inter`, instalada junto com o app (sem buscar na internet). Entra como reserva da SF Pro nos computadores que não são Mac.
 - **TanStack Query** para buscar dados da API e atualizar o andamento das criações sozinho, com cache e nova tentativa automática.
 - Gravação de áudio com o **MediaRecorder** nativo do navegador, sem biblioteca extra.
 
@@ -253,7 +254,7 @@ FILLFRAME_GERACOES_SIMULTANEAS=4
 
 Pré-requisitos, instalados uma vez: **uv** e **Node.js 20+**.
 
-Terminal 1, backend (instala dependências, aplica migrações e sobe em `127.0.0.1:8000`):
+Terminal 1, backend (instala dependências, aplica migrações e sobe em `127.0.0.1:8010`; a 8000 foi trocada em 2026-10-12 porque o gw-chatbot, outro projeto, já usa essa porta):
 ```bash
 cd backend && uv run fillframe
 ```
